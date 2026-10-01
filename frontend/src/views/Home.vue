@@ -5,7 +5,17 @@ import { useUserStore } from '@/stores/user'
 import StatCard from '@/components/StatCard.vue'
 import CategoryBadge from '@/components/CategoryBadge.vue'
 import SectionHeader from '@/components/SectionHeader.vue'
-import Chart from '@/components/Chart.vue'
+// PERF-001：ECharts 打包后约 192KB gzip，是首屏第二大块。
+// 首页图表都在首屏折线以下，改成异步组件后它会被拆出去、滚动到时才加载，
+// 首屏体积立刻下降；图表出现前用骨架屏占位，视觉上不跳。
+import { defineAsyncComponent } from 'vue'
+const Chart = defineAsyncComponent({
+  loader: () => import('@/components/Chart.vue'),
+  // 加载中/失败都不渲染，由外层 v-if/v-else 的骨架屏兜底
+  loadingComponent: { template: '<div style="height:260px"></div>' },
+  errorComponent: { template: '<div style="height:260px"></div>' },
+  delay: 0,
+})
 import Skeleton from '@/components/Skeleton.vue'
 import AppIcon from '@/components/AppIcon.vue'
 import { Camera, MessagesSquare, FileText, Calendar, ArrowRight, Cpu, Wifi, ShieldCheck, Database } from 'lucide-vue-next'

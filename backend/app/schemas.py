@@ -1,6 +1,17 @@
 """Pydantic 请求/响应模型。"""
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field
+
+
+def as_utc(dt: datetime | None) -> datetime | None:
+    """DATA-001：库里存的是 naive UTC，出参前显式补上 UTC 时区标记。
+
+    不加标记时前端 `new Date("2026-09-30T18:11:46")` 会按**本地时间**解析，
+    语义上正好差 8 小时；带 `+00:00` 后浏览器才能正确按 UTC 解释再转本地展示。
+    """
+    if dt is None:
+        return None
+    return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt
 
 
 # ---------- 识别 ----------

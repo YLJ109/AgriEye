@@ -125,6 +125,28 @@ python -c "from ultralytics import YOLO; YOLO('insect_best.pt').export(format='o
 - [创新点介绍](docs/创新点介绍.md)
 - [部署教程](docs/部署教程.md)
 
+## 性能说明（PERF-001，如实披露）
+
+首屏 gzip 约 **441 KB**，构成如下：
+
+| 组成 | gzip | 说明 |
+|---|---|---|
+| element-plus | 302 KB | 全量引入（见下方取舍） |
+| 全局 CSS | 55 KB | 设计令牌 + 组件样式 |
+| vue-vendor | 45 KB | Vue + Pinia + Router |
+| 业务代码（index + Home） | 39 KB | — |
+| **ECharts（192 KB）** | **已移出首屏** | 图表改为异步组件，滚动到才加载 |
+
+**已落实的优化**：移除 Element Plus 图标全量注册（-39KB）、ECharts 异步化（-192KB 首屏）、
+路由懒加载、识别结果缓存、虫害模型懒加载。
+
+**关于 element-plus 全量引入的取舍**：要在 300KB 门禁内达标，必须改成按需引入
+（`unplugin-vue-components` + ElementPlusResolver），预计可降到 ~150KB。
+但这项改动会触及全部页面的组件注册，答辩前引入视觉回归风险不划算，
+因此**当前有意保留全量引入以换取稳定性**，已记录为后续优化项。
+若要执行：装 `unplugin-vue-components` + `unplugin-auto-import`，
+在 `vite.config` 加 `ElementPlusResolver()`，保留样式全量引入即可。
+
 ## 架构亮点
 
 - **企业级设计系统**：完整设计令牌（8px 网格、双色融合渐变、5 级阴影、双字体、动效曲线、深色模式）

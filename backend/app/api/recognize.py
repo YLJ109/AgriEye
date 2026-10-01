@@ -18,7 +18,7 @@ from app.db.database import get_session
 from app.db.models import User, Diagnosis
 from app.core.model_inference import inference_engine
 from app.core.scheme_generator import generate_scheme
-from app.schemas import RecognizeResponse
+from app.schemas import RecognizeResponse, as_utc
 
 router = APIRouter()
 
@@ -174,7 +174,7 @@ async def recognize(
         scheme=scheme,
         rag_advice=scheme.get("rag_advice"),
         image_url=f"{image_url_prefix}/{save_name}",
-        created_at=created_at,
+        created_at=as_utc(created_at),
         mode=result.mode,
     )
 

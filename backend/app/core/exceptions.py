@@ -18,10 +18,15 @@ def _new_trace_id() -> str:
     return uuid.uuid4().hex[:12]
 
 
+def _trace_id_of(request: Request) -> str:
+    """REL-001：复用中间件生成的链路 ID，让请求日志与异常日志能用同一个 ID 串联。"""
+    return getattr(request.state, "request_id", None) or _new_trace_id()
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(RequestValidationError)
     async def validation_handler(request: Request, exc: RequestValidationError):
-        trace_id = _new_trace_id()
+        trace_id = _trace_id_of(request)
         logger.warning(f"[{trace_id}] 参数校验失败 {request.url.path}: {exc.errors()}")
         return JSONResponse(
             status_code=422,
@@ -36,7 +41,7 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(Exception)
     async def global_handler(request: Request, exc: Exception):
-        trace_id = _new_trace_id()
+        trace_id = _trace_id_of(request)
         logger.exception(f"[{trace_id}] 未处理异常 {request.url.path}: {exc}")
         content: dict = {
             "code": 500,

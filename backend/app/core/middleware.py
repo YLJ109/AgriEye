@@ -1,5 +1,6 @@
-"""企业级中间件 - 请求日志、耗时统计、简单限流。"""
+"""企业级中间件 - 请求日志、耗时统计、链路 ID、简单限流。"""
 import time
+import uuid
 from collections import defaultdict, deque
 
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -7,22 +8,35 @@ from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 from loguru import logger
 
+REQUEST_ID_HEADER = "X-Request-ID"
+
 
 class RequestLogMiddleware(BaseHTTPMiddleware):
-    """记录每个请求的方法、路径、状态码、耗时。"""
+    """记录每个请求的方法、路径、状态码、耗时，并注入链路 ID（REL-001）。
+
+    链路 ID 的取值优先级：
+    1. 上游（如 Nginx）传来的 X-Request-ID —— 便于跨服务串联
+    2. 本次生成的 12 位随机 ID
+    它会同时写进日志前缀和响应头，异常处理器也从 request.state 复用同一个值，
+    这样「用户报一个 ID」就能 grep 出这一次操作的完整链路。
+    """
 
     async def dispatch(self, request: Request, call_next):
         start = time.perf_counter()
+        request_id = request.headers.get(REQUEST_ID_HEADER) or uuid.uuid4().hex[:12]
+        request.state.request_id = request_id
         response: Response = await call_next(request)
         cost = (time.perf_counter() - start) * 1000
         # 跳过静态资源与 docs
         path = request.url.path
-        if path.startswith(("/uploads", "/openapi", "/docs", "/redoc")):
+        if path.startswith(("/uploads", "/preview_tmp", "/openapi", "/docs", "/redoc")):
+            response.headers[REQUEST_ID_HEADER] = request_id
             return response
         logger.info(
-            f"{request.method} {path} -> {response.status_code} ({cost:.1f}ms)"
+            f"[{request_id}] {request.method} {path} -> {response.status_code} ({cost:.1f}ms)"
         )
         response.headers["X-Response-Time"] = f"{cost:.1f}ms"
+        response.headers[REQUEST_ID_HEADER] = request_id
         return response
 
 

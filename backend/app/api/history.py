@@ -9,7 +9,7 @@ from app.constants import FINE_LABELS_ZH
 from app.core.auth import CurrentUser
 from app.db.database import get_session
 from app.db.models import Diagnosis, Plot, User
-from app.schemas import HistoryPage, DiagnosisItem, PlotCreate, PlotOut
+from app.schemas import HistoryPage, DiagnosisItem, PlotCreate, PlotOut, as_utc
 
 router = APIRouter()
 
@@ -61,7 +61,7 @@ async def list_history(
         fine_label=FINE_LABELS_ZH.get(r.fine_class or "", r.fine_class) or settings.coarse_labels_zh.get(r.coarse_category, r.coarse_category),
         confidence=round(r.confidence, 4),
         severity=r.severity,
-        created_at=r.created_at,
+        created_at=as_utc(r.created_at),
     ) for r in rows]
     return HistoryPage(total=total, page=page, page_size=page_size, items=items)
 
@@ -83,7 +83,7 @@ async def detail(diagnosis_id: int, current_user: CurrentUser,
         "detection_boxes": d.detection_boxes or [],
         "scheme": d.scheme or {},
         "rag_advice": d.rag_advice,
-        "created_at": d.created_at.isoformat(),
+        "created_at": as_utc(d.created_at).isoformat(),
     }
 
 

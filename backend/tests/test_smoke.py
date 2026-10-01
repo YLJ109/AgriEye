@@ -123,6 +123,32 @@ def test_cross_user_cannot_delete_others_record(api_ready, admin_token, second_u
     assert r.status_code == 404, "跨用户删除应被拦截"
 
 
+# ---------- TEST-001：历史列表分页 ----------
+def test_pagination_page_size_is_respected(api_ready, admin_token):
+    r = httpx.get(
+        f"{api_ready}/api/history/list",
+        params={"page": 1, "page_size": 1},
+        headers={"Authorization": f"Bearer {admin_token}"},
+        timeout=10,
+    ).json()
+    assert len(r["items"]) <= 1, "page_size 应生效"
+    assert r["page"] == 1 and r["page_size"] == 1
+
+
+def test_pagination_beyond_last_page_is_empty(api_ready, admin_token):
+    """翻过最后一页应返回空列表，而不是报错或回退到第一页。"""
+    r = httpx.get(
+        f"{api_ready}/api/history/list",
+        params={"page": 9999, "page_size": 10},
+        headers={"Authorization": f"Bearer {admin_token}"},
+        timeout=10,
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["items"] == []
+    assert isinstance(body["total"], int)
+
+
 # ---------- SEC-007：上传魔数校验 ----------
 def test_upload_rejects_fake_image(api_ready, admin_token):
     """扩展名是 .png 但内容不是图片 —— 应被魔数校验拦下。"""
