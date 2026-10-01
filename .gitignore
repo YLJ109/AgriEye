@@ -25,9 +25,11 @@ backend/data/agri.db-journal
 *.bak
 
 # ===== 环境变量与密钥 =====
+# 注意：.gitignore 不支持行尾注释，`pattern # 说明` 会把整行当成文件名，规则永远不会命中
 .env
 .env.local
-backend/data/.secret_key      # JWT 签名密钥，自动生成，绝不入库
+# JWT 签名密钥，程序自动生成，绝不入库
+backend/data/.secret_key
 
 # ===== 编辑器 / IDE / 工具目录 =====
 .vscode/
