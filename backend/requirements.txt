@@ -23,6 +23,10 @@ faiss-cpu==1.8.0.post1
 sentence-transformers==3.1.1
 jieba==0.42.1
 
+# ===== 认证（SEC-002/006）=====
+PyJWT==2.9.0           # JWT 签发与校验
+passlib==1.7.4         # pbkdf2_sha256 加盐哈希（纯 Python，无需 bcrypt 原生扩展）
+
 # ===== 工具 =====
 httpx==0.27.2          # AI 顾问调用智谱 GLM（chat.py），直连优先 + 代理兜底
 loguru==0.7.2

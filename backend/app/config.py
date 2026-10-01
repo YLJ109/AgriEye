@@ -10,7 +10,11 @@ class Settings(BaseSettings):
     app_name: str = "农智 AI 顾问系统"
     host: str = "0.0.0.0"
     port: int = 8001
-    cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    # 前端固定 5188（5173 属另一个项目，勿占用）。如需其他端口，用环境变量 CORS_ORIGINS 覆盖。
+    cors_origins: list[str] = [
+        "http://localhost:5188", "http://127.0.0.1:5188",
+        "http://localhost:5173", "http://127.0.0.1:5173",  # 兼容老 dev 端口
+    ]
 
     # ---------- 路径 ----------
     base_dir: Path = Path(__file__).resolve().parents[1]

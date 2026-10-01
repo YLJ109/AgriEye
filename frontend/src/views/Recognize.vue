@@ -92,7 +92,6 @@ async function detectAll() {
     try {
       const fd = new FormData()
       fd.append('file', img.file)
-      fd.append('user_id', '1')
       fd.append('preview', 'true')
       const res = await api.recognize(fd)
       img.result = res
@@ -188,7 +187,6 @@ async function submitApproved() {
     try {
       const fd = new FormData()
       fd.append('image_path', img.result.image_url.replace('/uploads/', ''))
-      fd.append('user_id', '1')
       fd.append('coarse_category', img.result.coarse_category)
       fd.append('fine_class', img.result.fine_class || '')
       fd.append('confidence', img.result.confidence)

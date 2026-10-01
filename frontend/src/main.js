@@ -44,7 +44,17 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
 
-app.use(createPinia())
+const pinia = createPinia()
+app.use(pinia)
 app.use(router)
 app.use(ElementPlus, { locale: zhCn })
+
+// 刷新后先用本地 token 换回身份；token 已失效则清空，由路由守卫送回登录页
+import { useUserStore } from './stores/user'
+import api from './api'
+const userStore = useUserStore(pinia)
+userStore.restore().then((ok) => {
+  if (ok) { userStore.loadStats(); api.systemInfo().then(d => (userStore.systemInfo = d)).catch(() => {}) }
+}).catch(() => {})
+
 app.mount('#app')

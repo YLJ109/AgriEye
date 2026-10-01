@@ -107,3 +107,30 @@ class PlotOut(BaseModel):
     location: str | None
     growth_stage: str | None
     note: str | None
+
+
+# ---------- 认证（SEC-002）----------
+class LoginRequest(BaseModel):
+    username: str = Field(..., min_length=1, max_length=64)
+    password: str = Field(..., min_length=1, max_length=128)
+
+
+class RegisterRequest(LoginRequest):
+    nickname: str | None = None
+    region: str | None = None
+
+
+class UserOut(BaseModel):
+    id: int
+    username: str | None
+    nickname: str
+    role: str
+    region: str | None = None
+    avatar: str | None = None
+
+
+class TokenOut(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int          # 有效秒数
+    user: UserOut

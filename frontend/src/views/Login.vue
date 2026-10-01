@@ -1,18 +1,37 @@
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import AppIcon from '@/components/AppIcon.vue'
 import { ElMessage } from 'element-plus'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const route = useRoute()
+const userStore = useUserStore()
 const isLogin = ref(true)
 const loading = ref(false)
 
 const form = ref({
-  username: 'admin',
-  password: '123456',
-  confirmPassword: '123456',
+  username: '',
+  password: '',
+  confirmPassword: '',
 })
+
+/** 演示一键登录：直接以内置的 admin 账号走真实认证链路 */
+async function demoLogin() {
+  form.value.username = 'admin'
+  form.value.password = '123456'
+  loading.value = true
+  try {
+    await userStore.login('admin', '123456')
+    ElMessage.success('已进入演示模式')
+    router.push(route.query.redirect || '/')
+  } catch {
+    /* 错误提示由 axios 拦截器统一弹出 */
+  } finally {
+    loading.value = false
+  }
+}
 
 async function handleSubmit() {
   if (!form.value.username || !form.value.password) {
@@ -24,23 +43,23 @@ async function handleSubmit() {
     return
   }
   loading.value = true
-  await new Promise(r => setTimeout(r, 600))
-  if (isLogin.value) {
-    if (form.value.username === 'admin' && form.value.password === '123456') {
-      localStorage.setItem('isLogin', 'true')
-      localStorage.setItem('username', form.value.username)
+  try {
+    if (isLogin.value) {
+      await userStore.login(form.value.username, form.value.password)
       ElMessage.success('登录成功')
-      router.push('/')
     } else {
-      ElMessage.error('账号或密码错误')
+      await userStore.register({
+        username: form.value.username,
+        password: form.value.password,
+      })
+      ElMessage.success('注册成功，已自动登录')
     }
-  } else {
-    localStorage.setItem('isLogin', 'true')
-    localStorage.setItem('username', form.value.username)
-    ElMessage.success('注册成功，已自动登录')
-    router.push('/')
+    router.push(route.query.redirect || '/')
+  } catch {
+    /* 错误提示由 axios 拦截器统一弹出 */
+  } finally {
+    loading.value = false
   }
-  loading.value = false
 }
 </script>
 
@@ -118,8 +137,19 @@ async function handleSubmit() {
           </button>
         </form>
 
+        <button
+          v-if="isLogin"
+          type="button"
+          class="demo-btn"
+          :disabled="loading"
+          @click="demoLogin"
+        >
+          <AppIcon name="sparkles" :size="16" />
+          <span>演示一键进入（admin / 123456）</span>
+        </button>
+
         <div class="form-footer" v-if="isLogin">
-          <span>演示账号：admin / 123456</span>
+          <span>默认账号由服务端初始化，口令以加盐哈希存储</span>
         </div>
       </div>
     </div>
@@ -200,6 +230,19 @@ async function handleSubmit() {
 .submit-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
 .submit-btn:active { transform: translateY(0); }
 .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* 演示一键进入：次级按钮，弱于主按钮但清晰可点 */
+.demo-btn {
+  display: flex; align-items: center; justify-content: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--border-strong); border-radius: var(--radius-md);
+  background: transparent; color: var(--fg-secondary);
+  font-size: var(--text-sm); font-weight: 600; cursor: pointer;
+  transition: all var(--duration) var(--ease-out);
+}
+.demo-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.demo-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.demo-btn svg { flex-shrink: 0; }
 
 .form-footer { text-align: center; font-size: var(--text-xs); color: var(--fg-subtle); padding-top: var(--space-2); border-top: 1px solid var(--border); }
 </style>

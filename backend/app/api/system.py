@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
 from app.config import settings
+from app.core.auth import CurrentUser
 from app.db.database import get_session
 from app.db.models import Diagnosis, User
 
@@ -28,14 +29,15 @@ async def info():
 
 
 @router.get("/stats")
-async def stats(user_id: int = 1, session: AsyncSession = Depends(get_session)):
+async def stats(current_user: CurrentUser, session: AsyncSession = Depends(get_session)):
+    """统计口径固定为「当前登录用户自己的数据」（SEC-003）。"""
     total = (await session.execute(
-        select(func.count()).where(Diagnosis.user_id == user_id)
+        select(func.count()).where(Diagnosis.user_id == current_user.id)
     )).scalar_one()
     # 按大类统计
     rows = (await session.execute(
         select(Diagnosis.coarse_category, func.count())
-        .where(Diagnosis.user_id == user_id)
+        .where(Diagnosis.user_id == current_user.id)
         .group_by(Diagnosis.coarse_category)
     )).all()
     by_category = {settings.coarse_labels_zh.get(k, k): v for k, v in rows}

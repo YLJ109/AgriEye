@@ -13,6 +13,7 @@ from loguru import logger
 
 from app.config import settings
 from app.constants import FINE_LABELS_ZH
+from app.core.auth import CurrentUser
 from app.db.database import get_session
 from app.db.models import User, Diagnosis
 from app.core.model_inference import inference_engine
@@ -24,8 +25,8 @@ router = APIRouter()
 
 @router.post("", response_model=RecognizeResponse)
 async def recognize(
+    current_user: CurrentUser,
     file: UploadFile = File(...),
-    user_id: int = Form(1),
     plot_id: int | None = Form(None),
     crop: str | None = Form(None),
     preview: bool = Form(False),
@@ -84,10 +85,11 @@ async def recognize(
     # 默认占位：保证 preview 路径与异常路径下 diagnosis_id/created_at 始终有值，
     # 避免 UnboundLocalError（局部变量仅在分支内赋值却在分支外被读取）。
     diagnosis_id = 0
-    created_at = datetime.now()
+    # DATA-001：与 ORM 的 default=datetime.utcnow 保持一致，全链路统一 UTC 入库
+    created_at = datetime.utcnow()
     if not preview:
         diag = Diagnosis(
-            user_id=user_id,
+            user_id=current_user.id,
             plot_id=plot_id,
             image_path=save_name,
             coarse_category=result.coarse_category,
@@ -124,8 +126,8 @@ async def recognize(
 
 @router.post("/store")
 async def store_diagnosis(
+    current_user: CurrentUser,
     image_path: str = Form(...),
-    user_id: int = Form(1),
     coarse_category: str = Form(...),
     fine_class: str = Form(None),
     confidence: float = Form(0.0),
@@ -138,7 +140,7 @@ async def store_diagnosis(
     """审核通过后存储诊断记录。"""
     import json
     diag = Diagnosis(
-        user_id=user_id,
+        user_id=current_user.id,
         image_path=image_path,
         coarse_category=coarse_category,
         fine_class=fine_class,

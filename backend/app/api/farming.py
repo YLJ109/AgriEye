@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 
+from app.core.auth import CurrentUser
 from app.db.database import get_session
 from app.db.models import FarmingReminder
 from app.schemas import ReminderCreate, ReminderOut
@@ -70,19 +71,20 @@ async def current_advice(crop: str | None = None):
 
 
 @router.get("/reminders", response_model=list[ReminderOut])
-async def list_reminders(user_id: int = Query(1), session: AsyncSession = Depends(get_session)):
+async def list_reminders(current_user: CurrentUser, session: AsyncSession = Depends(get_session)):
+    """本人提醒 + 系统公共提醒（user_id 为空）。user_id 一律取自身份，不信任前端入参。"""
     rows = (await session.execute(
         select(FarmingReminder).where(
-            (FarmingReminder.user_id == user_id) | (FarmingReminder.user_id.is_(None))
+            (FarmingReminder.user_id == current_user.id) | (FarmingReminder.user_id.is_(None))
         ).order_by(desc(FarmingReminder.created_at))
     )).scalars().all()
     return [_to_out(r) for r in rows]
 
 
 @router.post("/reminders", response_model=ReminderOut)
-async def create_reminder(payload: ReminderCreate, user_id: int = Query(1),
+async def create_reminder(payload: ReminderCreate, current_user: CurrentUser,
                            session: AsyncSession = Depends(get_session)):
-    r = FarmingReminder(user_id=user_id, **payload.model_dump())
+    r = FarmingReminder(user_id=current_user.id, **payload.model_dump())
     session.add(r)
     await session.commit()
     await session.refresh(r)
@@ -90,9 +92,9 @@ async def create_reminder(payload: ReminderCreate, user_id: int = Query(1),
 
 
 @router.patch("/reminders/{rid}/done")
-async def mark_done(rid: int, session: AsyncSession = Depends(get_session)):
+async def mark_done(rid: int, current_user: CurrentUser, session: AsyncSession = Depends(get_session)):
     r = await session.get(FarmingReminder, rid)
-    if not r:
+    if not r or r.user_id != current_user.id:   # SEC-003 归属校验
         raise HTTPException(404, "提醒不存在")
     r.done = not r.done
     await session.commit()
@@ -100,9 +102,9 @@ async def mark_done(rid: int, session: AsyncSession = Depends(get_session)):
 
 
 @router.delete("/reminders/{rid}")
-async def delete_reminder(rid: int, session: AsyncSession = Depends(get_session)):
+async def delete_reminder(rid: int, current_user: CurrentUser, session: AsyncSession = Depends(get_session)):
     r = await session.get(FarmingReminder, rid)
-    if not r:
+    if not r or r.user_id != current_user.id:   # SEC-003 归属校验
         raise HTTPException(404, "提醒不存在")
     await session.delete(r)
     await session.commit()

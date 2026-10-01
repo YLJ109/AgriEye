@@ -2,7 +2,9 @@
 import { ref, computed, nextTick, onMounted } from 'vue'
 import api from '@/api'
 import { ElMessage } from 'element-plus'
-import { marked } from 'marked'
+// SEC-004：Markdown 必须由 MarkdownView（marked + DOMPurify）渲染，
+// 本地 renderMd 只做 marked.parse，缺少净化步骤，AI 返回内容里的 <script>/onerror 会被原样执行。
+import MarkdownView from '@/components/MarkdownView.vue'
 import { Plus, MessageSquare, Trash2, Settings, Bot, User, Leaf, ImagePlus, X, SendHorizontal, Lightbulb, Bug, TrendingDown, AlertTriangle, ClipboardList } from 'lucide-vue-next'
 
 const settings = ref(JSON.parse(localStorage.getItem('advisor_settings') || 'null') || {
@@ -54,12 +56,12 @@ const suggestions = [
   { icon: AlertTriangle, text: '农药药害怎么处理？' },
 ]
 
-function renderMd(text) {
-  try {
-    return marked.parse(text)
-  } catch {
-    return text
-  }
+/** SEC-005：API Key 只存在浏览器本地，共用电脑有泄露风险，提供一键清除 */
+function clearApiKey() {
+  settingsForm.value.apiKey = ''
+  settings.value.apiKey = ''
+  localStorage.setItem('advisor_settings', JSON.stringify(settings.value))
+  ElMessage.success('已清除本机保存的 API Key')
 }
 
 async function send() {
@@ -177,7 +179,7 @@ onMounted(() => {
             <img v-if="msg.image" :src="msg.image" class="msg-image" alt="upload" />
             <div v-if="msg.pending" class="typing"><span></span><span></span><span></span></div>
             <div v-else-if="msg.error" class="msg-content">{{ msg.content }}</div>
-            <div v-else class="msg-content md-content" v-html="renderMd(msg.content)"></div>
+            <MarkdownView v-else class="msg-content md-content" :source="msg.content" />
           </div>
         </div>
       </div>
@@ -207,7 +209,14 @@ onMounted(() => {
         <div class="setting-row">
           <label>智谱 API Key</label>
           <el-input v-model="settingsForm.apiKey" placeholder="请输入智谱 API Key" type="password" show-password />
-          <a href="https://open.bigmodel.cn/usercenter/apikeys" target="_blank" class="setting-link">获取 API Key</a>
+          <div class="setting-actions">
+            <a href="https://open.bigmodel.cn/usercenter/apikeys" target="_blank" class="setting-link">获取 API Key</a>
+            <button type="button" class="link-danger" @click="clearApiKey">清除本机 Key</button>
+          </div>
+          <p class="setting-warn">
+            <AlertTriangle :size="14" />
+            <span>Key 仅保存在本机浏览器（localStorage），不会上传服务器；共用电脑请在演示后点击「清除本机 Key」。</span>
+          </p>
         </div>
         <div class="setting-row">
           <label>文字模型</label>
@@ -222,6 +231,10 @@ onMounted(() => {
             <el-option label="GLM-4V-Flash（免费）" value="glm-4v-flash" />
             <el-option label="GLM-4V-Plus（高级）" value="glm-4v-plus" />
           </el-select>
+        </div>
+        <div class="setting-tip warning">
+          <AlertTriangle :size="16" />
+          <span>API Key 明文存放在浏览器本地存储，共用设备存在泄露风险。建议演示结束后清除，或改用服务端环境变量 ZHIPU_API_KEY。</span>
         </div>
         <div class="setting-tip">
           <Lightbulb :size="16" />
@@ -345,6 +358,21 @@ onMounted(() => {
 .setting-link:hover { text-decoration: underline; }
 .setting-tip { display: flex; align-items: flex-start; gap: var(--space-2); padding: var(--space-3); background: var(--accent-soft); border-radius: var(--radius-md); color: var(--fg-secondary); font-size: var(--text-xs); line-height: var(--leading-relaxed); }
 .setting-tip svg { color: var(--accent); flex-shrink: 0; margin-top: 2px; }
+.setting-tip.warning { background: rgba(245,158,11,0.12); }
+.setting-tip.warning svg { color: var(--warning, #f59e0b); }
+
+/* SEC-005：Key 风险提示与一键清除 */
+.setting-actions { display: flex; align-items: center; gap: var(--space-3); }
+.link-danger {
+  border: none; background: none; padding: 0; cursor: pointer;
+  font-size: var(--text-xs); color: var(--danger, #ef4444); text-decoration: none;
+}
+.link-danger:hover { text-decoration: underline; }
+.setting-warn {
+  display: flex; align-items: flex-start; gap: var(--space-1);
+  font-size: var(--text-xs); color: var(--fg-muted); line-height: var(--leading-relaxed);
+}
+.setting-warn svg { flex-shrink: 0; margin-top: 2px; color: var(--warning, #f59e0b); }
 
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 </style>

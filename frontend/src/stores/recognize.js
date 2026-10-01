@@ -15,7 +15,7 @@ export const useRecognizeStore = defineStore('recognize', () => {
     try {
       const fd = new FormData()
       fd.append('file', file)
-      fd.append('user_id', 1)
+      // 归属由后端按 token 判定，不传 user_id（SEC-002）
       if (crop) fd.append('crop', crop)
       if (plotId) fd.append('plot_id', plotId)
       result.value = await api.recognize(fd)
@@ -27,7 +27,7 @@ export const useRecognizeStore = defineStore('recognize', () => {
 
   async function loadHistory(page = 1, pageSize = 10, coarse = null, search = null) {
     lastQuery.value = { page, pageSize, coarse, search }
-    const res = await api.listHistory({ user_id: 1, page, page_size: pageSize, coarse, search })
+    const res = await api.listHistory({ page, page_size: pageSize, coarse, search })
     history.value = res.items
     historyTotal.value = res.total
     return res

@@ -30,11 +30,17 @@ const routes = [
 
 const router = createRouter({ history: createWebHistory(), routes })
 
+// 守卫依据：后端签发的 JWT 是否存在（SEC-001）。
+// 令牌是否存在只决定“能否进内页”；令牌是否有效由 axios 401 拦截 + 启动时 /api/auth/me 校验兜底。
+function hasToken() {
+  return !!localStorage.getItem('agrieye_token')
+}
+
 router.beforeEach((to, from, next) => {
-  const isLogin = localStorage.getItem('isLogin') === 'true'
-  if (!to.meta.public && !isLogin) {
-    next('/login')
-  } else if (to.path === '/login' && isLogin) {
+  const logged = hasToken()
+  if (!to.meta.public && !logged) {
+    next({ path: '/login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : undefined })
+  } else if (to.path === '/login' && logged) {
     next('/')
   } else {
     next()

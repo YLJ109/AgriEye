@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.db.database import init_db
-from app.api import recognize, rag, history, farming, system, chat
+from app.api import auth, recognize, rag, history, farming, system, chat
 from app.core.middleware import RequestLogMiddleware, RateLimitMiddleware
 from app.core.exceptions import register_exception_handlers
 
@@ -59,6 +59,7 @@ register_exception_handlers(app)
 app.mount("/uploads", StaticFiles(directory=str(settings.upload_dir)), name="uploads")
 
 # 路由注册
+app.include_router(auth.router)  # /api/auth/*（自带 prefix）
 app.include_router(system.router, prefix="/api/system", tags=["系统"])
 app.include_router(recognize.router, prefix="/api/recognize", tags=["识别"])
 app.include_router(rag.router, prefix="/api/rag", tags=["RAG 问答"])

@@ -44,8 +44,8 @@ function toggleTheme() {
 function handleLogout() { showLogoutConfirm.value = true; closePopovers() }
 function confirmLogout() {
   showLogoutConfirm.value = false
-  localStorage.removeItem('isLogin')
-  localStorage.removeItem('username')
+  // 走 store：清本地 token + 通知后端，避免留下失效凭据
+  userStore.logout()
   ElMessage.success('已退出登录')
   router.push('/login')
 }

@@ -24,9 +24,10 @@ backend/data/vector_db/
 backend/data/agri.db-journal
 *.bak
 
-# ===== 环境变量（含密钥）=====
+# ===== 环境变量与密钥 =====
 .env
 .env.local
+backend/data/.secret_key      # JWT 签名密钥，自动生成，绝不入库
 
 # ===== 编辑器 / IDE / 工具目录 =====
 .vscode/
