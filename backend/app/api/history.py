@@ -2,6 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc, or_
+from loguru import logger
 
 from app.config import settings
 from app.constants import FINE_LABELS_ZH
@@ -84,8 +85,22 @@ async def delete_diagnosis(diagnosis_id: int, current_user: CurrentUser,
     d = await session.get(Diagnosis, diagnosis_id)
     if not d or d.user_id != current_user.id:   # SEC-003：只能删自己的
         raise HTTPException(404, "记录不存在")
+
+    image_path = d.image_path
     await session.delete(d)
     await session.commit()
+
+    # DATA-002：联动清理上传文件。哈希命名会复用同一文件，
+    # 只有确认没有其他记录仍引用它时才真正删除，避免把别人/别的记录的图删掉。
+    if image_path:
+        still_used = (await session.execute(
+            select(func.count()).where(Diagnosis.image_path == image_path)
+        )).scalar_one()
+        if still_used == 0:
+            try:
+                (settings.upload_dir / image_path).unlink(missing_ok=True)
+            except OSError as e:
+                logger.warning(f"删除关联图片失败（不影响记录删除）：{image_path} - {e}")
     return {"ok": True}
 
 

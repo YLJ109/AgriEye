@@ -1,4 +1,9 @@
 """全局常量 - 细分类别中文标签等共享常量。"""
+
+# DATA-004：诊断记录里 JSON 结构（scheme / detection_boxes）的版本号。
+# 结构发生不兼容变更时递增，读取端据此选择解析方式，老数据仍可正常展示。
+SCHEMA_VERSION = 1
+
 FINE_LABELS_ZH = {
     "rice_blast": "稻瘟病", "rice_bacterial_blight": "水稻白叶枯病",
     "rice_sheath_blight": "水稻纹枯病", "rice_brown_planthopper": "褐飞虱",

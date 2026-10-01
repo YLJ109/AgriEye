@@ -12,7 +12,7 @@ from sqlalchemy import select
 from loguru import logger
 
 from app.config import settings
-from app.constants import FINE_LABELS_ZH
+from app.constants import FINE_LABELS_ZH, SCHEMA_VERSION
 from app.core.auth import CurrentUser
 from app.db.database import get_session
 from app.db.models import User, Diagnosis
@@ -102,6 +102,7 @@ async def recognize(
         crop=crop,
         severity=result.severity,
     )
+    scheme["schema_version"] = SCHEMA_VERSION   # DATA-004
 
     # ---------- 落库 ----------
     # 默认占位：保证 preview 路径与异常路径下 diagnosis_id/created_at 始终有值，
@@ -161,6 +162,35 @@ async def store_diagnosis(
 ):
     """审核通过后存储诊断记录。"""
     import json
+    # 前端传来的 JSON 字符串可能为空或格式异常，逐项容错，避免整条记录写不进去（FUNC-003）
+    try:
+        boxes = json.loads(detection_boxes) if detection_boxes else []
+        if not isinstance(boxes, list):
+            boxes = []
+    except (json.JSONDecodeError, TypeError):
+        logger.warning(f"detection_boxes 解析失败，按空列表处理：{detection_boxes!r}")
+        boxes = []
+    try:
+        scheme_obj = json.loads(scheme) if scheme else {}
+        if not isinstance(scheme_obj, dict):
+            scheme_obj = {}
+    except (json.JSONDecodeError, TypeError):
+        logger.warning(f"scheme 解析失败，按空字典处理：{scheme!r}")
+        scheme_obj = {}
+    scheme_obj.setdefault("schema_version", SCHEMA_VERSION)   # DATA-004：结构版本，便于后续兼容升级
+
+    # CONC-001：同一用户对同一张图重复提交（网络重试/误点）不再产生重复记录
+    if image_path:
+        dup = (await session.execute(
+            select(Diagnosis).where(
+                Diagnosis.user_id == current_user.id,
+                Diagnosis.image_path == image_path,
+            )
+        )).scalars().first()
+        if dup:
+            logger.info(f"重复的入库请求，返回已有记录 id={dup.id}")
+            return {"ok": True, "id": dup.id, "duplicated": True}
+
     diag = Diagnosis(
         user_id=current_user.id,
         image_path=image_path,
@@ -168,8 +198,8 @@ async def store_diagnosis(
         fine_class=fine_class,
         confidence=confidence,
         severity=severity,
-        detection_boxes=json.loads(detection_boxes),
-        scheme=json.loads(scheme),
+        detection_boxes=boxes,
+        scheme=scheme_obj,
         rag_advice=rag_advice,
     )
     session.add(diag)

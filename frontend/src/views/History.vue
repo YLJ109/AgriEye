@@ -14,8 +14,15 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 
 const store = useRecognizeStore()
 const userStore = useUserStore()
-const page = ref(1)
-const pageSize = ref(12)
+// FUNC-002：分页/筛选状态收归 store，返回本页时保留在第几页、搜了什么
+const page = computed({
+  get: () => store.page,
+  set: (v) => { store.page = v },
+})
+const pageSize = computed({
+  get: () => store.pageSize,
+  set: (v) => { store.pageSize = v },
+})
 const filterCoarse = ref('')
 const search = ref('')
 const dateRange = ref([])

@@ -3,7 +3,8 @@ import { createPinia } from 'pinia'
 import ElementPlus from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import 'element-plus/dist/index.css'
-import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+// PERF-001：不再全量注册 @element-plus/icons-vue（会把整套图标打进首屏包）。
+// 各组件已按需 import 自己用到的图标，此处无需注册。
 
 import App from './App.vue'
 import router from './router'
@@ -39,10 +40,6 @@ app.directive('reveal', {
     if (el._revealObserver) el._revealObserver.disconnect()
   },
 })
-
-for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
-  app.component(key, component)
-}
 
 const pinia = createPinia()
 app.use(pinia)

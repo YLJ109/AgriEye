@@ -80,6 +80,31 @@ function removeImage(id) {
   if (selectedId.value === id) { selectedId.value = ''; mainTab.value = 'review' }
 }
 
+// FUNC-005：批量识别改为有限并发 + 失败自动重试。
+// 后端是 CPU 上的 ONNX 推理，并发过高反而互相拖慢，故上限取 3。
+const DETECT_CONCURRENCY = 3
+const DETECT_MAX_RETRY = 1
+
+async function detectOne(img) {
+  for (let attempt = 0; attempt <= DETECT_MAX_RETRY; attempt++) {
+    try {
+      const fd = new FormData()
+      fd.append('file', img.file)
+      fd.append('preview', 'true')
+      img.result = await api.recognize(fd)
+      img.status = 'done'
+      return true
+    } catch {
+      if (attempt === DETECT_MAX_RETRY) {
+        img.status = 'error'
+        img.error = '检测失败，请重试'
+        return false
+      }
+    }
+  }
+  return false
+}
+
 async function detectAll() {
   const pending = images.value.filter(i => i.status === 'pending' || i.status === 'error')
   if (!pending.length) return
@@ -87,22 +112,19 @@ async function detectAll() {
   detectProgress.value = 0
   const total = pending.length
   let done = 0
-  for (const img of pending) {
-    img.status = 'detecting'
-    try {
-      const fd = new FormData()
-      fd.append('file', img.file)
-      fd.append('preview', 'true')
-      const res = await api.recognize(fd)
-      img.result = res
-      img.status = 'done'
-    } catch (e) {
-      img.status = 'error'
-      img.error = '检测失败，请重试'
+
+  const queue = [...pending]
+  const workers = Array.from({ length: Math.min(DETECT_CONCURRENCY, queue.length) }, async () => {
+    while (queue.length) {
+      const img = queue.shift()
+      img.status = 'detecting'
+      await detectOne(img)
+      done++
+      detectProgress.value = Math.round((done / total) * 100)
     }
-    done++
-    detectProgress.value = Math.round((done / total) * 100)
-  }
+  })
+  await Promise.all(workers)
+
   detecting.value = false
   const ok = images.value.filter(i => i.status === 'done').length
   if (ok) ElMessage.success(`批量检测完成，${ok} 张成功`)
