@@ -126,6 +126,21 @@ MODEL_FINE_CLASSES: frozenset[str] = frozenset(
 )
 
 
+def coarse_of_fine(fine: str | None) -> str:
+    """细分类 -> 四大类。对外公开（系统信息接口要按大类统计可识别数量）。"""
+    if not fine:
+        return "fungal_disease"
+    if fine == "general_pest":
+        return "pest"
+    if "deficiency" in fine:
+        return "deficiency"
+    if "phytotoxicity" in fine or "injury" in fine:
+        return "phytotoxicity"
+    if any(k in fine for k in ("aphid", "planthopper", "borer", "mite", "miner")):
+        return "pest"
+    return "fungal_disease"
+
+
 @dataclass
 class DetectionResult:
     coarse_category: str
@@ -427,17 +442,7 @@ class InferenceEngine:
     # ---------- 辅助 ----------
     @staticmethod
     def _coarse_of(fine: str | None) -> str:
-        if not fine:
-            return "fungal_disease"
-        if fine == "general_pest":
-            return "pest"
-        if "deficiency" in fine:
-            return "deficiency"
-        if "phytotoxicity" in fine or "injury" in fine:
-            return "phytotoxicity"
-        if any(k in fine for k in ("aphid", "planthopper", "borer", "mite", "miner")):
-            return "pest"
-        return "fungal_disease"
+        return coarse_of_fine(fine)
 
     # 注：原 _default_fine()（启发式给四大类编造具体病名）已移除。
     # 启发式只输出四大类、细分类为 None，避免"稻瘟病"这类模型根本检不到的结论被当成识别结果。

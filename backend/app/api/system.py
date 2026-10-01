@@ -5,7 +5,7 @@ from sqlalchemy import select, func
 
 from app.config import settings
 from app.core.auth import CurrentUser
-from app.core.model_inference import MODEL_FINE_CLASSES
+from app.core.model_inference import MODEL_FINE_CLASSES, coarse_of_fine
 from app.db.database import get_session
 from app.db.models import Diagnosis, User
 
@@ -17,15 +17,27 @@ async def health():
     return {"status": "ok", "app": settings.app_name, "version": "1.0.0"}
 
 
+def _recognizable_by_coarse() -> dict[str, int]:
+    """按四大类统计模型实际能识别的细分类数量。"""
+    counts: dict[str, int] = {k: 0 for k in settings.coarse_categories}
+    for fine in MODEL_FINE_CLASSES:
+        c = coarse_of_fine(fine)
+        counts[c] = counts.get(c, 0) + 1
+    return counts
+
+
 @router.get("/info")
 async def info():
     return {
         "app_name": settings.app_name,
         "categories": settings.coarse_labels_zh,
         # 口径澄清：能识别 ≠ 能出方案。以前这里直接返回方案库类别数（25），
-        # 被前端当成"支持识别的细分类数"展示，属于过度宣称（模型只能产出 14 个）。
+        # 被前端当成"支持识别的细分类数"展示，属于过度宣称（模型只能产出 13 个）。
         "fine_classes_count": len(MODEL_FINE_CLASSES),
         "fine_classes_with_scheme_count": len(settings.fine_classes),
+        # 按四大类统计「可识别」的细分类数（前端首页分类卡片展示，避免前端硬编码数字）。
+        # 注意这里可能某类为 0（如农药药害），那是真实情况：模型确实覆盖不到，前端如实显示。
+        "recognizable_by_coarse": _recognizable_by_coarse(),
         "device": settings.device,
         "offline_ready": True,
         "model_loaded": settings.model_path.exists(),

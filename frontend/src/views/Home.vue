@@ -116,11 +116,14 @@ const pieOption = computed(() => {
   }
 })
 
+// count 不再硬编码（原来写 9/6/4/1 是按「方案库」口径，且与后端实际可识别数对不上）。
+// 改为按四大类取可识别数，数据源是 /api/system/info 的 recognizable_by_coarse。
+const coarseRecognizable = computed(() => userStore.systemInfo?.recognizable_by_coarse || {})
 const categories = [
-  { key: 'fungal_disease', label: '真菌病害', desc: '稻瘟病、锈病、白粉病等真菌感染', count: '9 类', icon: 'fungus' },
-  { key: 'pest', label: '虫害', desc: '蚜虫、飞虱、螟虫等昆虫危害', count: '6 类', icon: 'bug' },
-  { key: 'deficiency', label: '土壤缺肥', desc: '缺氮黄化、缺钾焦枯等营养缺乏', count: '4 类', icon: 'trendDown' },
-  { key: 'phytotoxicity', label: '农药药害', desc: '药液斑驳、灼伤等施药不当', count: '1 类', icon: 'warning' },
+  { key: 'fungal_disease', label: '真菌病害', desc: '稻瘟病、锈病、白粉病等真菌感染', icon: 'fungus' },
+  { key: 'pest', label: '虫害', desc: '蚜虫、飞虱、螟虫等昆虫危害', icon: 'bug' },
+  { key: 'deficiency', label: '土壤缺肥', desc: '缺氮黄化、缺钾焦枯等营养缺乏', icon: 'trendDown' },
+  { key: 'phytotoxicity', label: '农药药害', desc: '药液斑驳、灼伤等施药不当', icon: 'warning' },
 ]
 const innovations = [
   { icon: 'brain', title: '多模态四分类', desc: '精准区分病害/虫害/缺肥/药害，解决肉眼混淆痛点' },
@@ -237,7 +240,7 @@ const sparks = {
         <div v-for="c in categories" :key="c.key" class="cat-card">
           <div class="cat-head">
             <CategoryBadge :category="c.key" size="lg" />
-            <span class="cat-count">{{ c.count }}</span>
+            <span class="cat-count">{{ coarseRecognizable[c.key] ?? '—' }} 类</span>
           </div>
           <div class="cat-icon"><AppIcon :name="c.icon" :size="30" /></div>
           <p class="cat-desc">{{ c.desc }}</p>

@@ -428,7 +428,7 @@ onBeforeUnmount(() => { images.value.forEach(i => URL.revokeObjectURL(i.url)) })
 
         <!-- 能力说明条 -->
         <div class="card info-card">
-          <div class="info-item"><Cpu :size="18" /><div><strong>多模态识别</strong><span>23 类细分 · 4 大病害域</span></div></div>
+          <div class="info-item"><Cpu :size="18" /><div><strong>多模态识别</strong><span>13 类细分 · 4 大病害域</span></div></div>
           <div class="info-item"><ShieldCheck :size="18" /><div><strong>人工审核</strong><span>逐条确认后入库</span></div></div>
           <div class="info-item"><Database :size="18" /><div><strong>可追溯</strong><span>档案全程留痕</span></div></div>
         </div>
