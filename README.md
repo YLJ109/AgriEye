@@ -15,6 +15,30 @@
 4. **农业 RAG 知识库 + 可选大模型** —— 本地 45 条农业知识片段做检索补充，输出用药/施肥/绿色减药方案；
    点页面「生成 AI 治理方案」才真正调用智谱 GLM（需配 API Key），默认方案不走大模型
 
+## 项目界面（真实运行截图）
+
+> 截图脚本见 `frontend/scripts/shoot-screenshots.mjs`（顶层注释写了前置命令与踩过的坑），
+> 重新起服务后一条命令即可复现整套图。
+
+以下截图全部来自**本机真实运行实例**（`npm run build` + `npm run preview -- --port 5188` 前端，
+`uvicorn app.main:app --port 8001` 后端），非设计稿、非PS。页面里的数据是演示库的真实数据，
+识别页那张图是**真跑 ONNX 得出的结论**（玉米大斑病 66% · AI 模型识别）。
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/home.png" alt="首页工作台" /><br><sub><b>首页工作台</b> · 离线可用状态与累计诊断概览</sub></td>
+    <td width="50%"><img src="docs/screenshots/home-mobile.png" alt="移动端首页" /><br><sub><b>移动端首页</b> · 390×844 自适应</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/recognize.png" alt="智能识别" /><br><sub><b>智能识别</b> · 上传→批量检测→人工审核三段式</sub></td>
+    <td width="50%"><img src="docs/screenshots/history.png" alt="诊断记录" /><br><sub><b>诊断记录</b> · 按大类筛选 + 时间倒序追溯</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/advisor.png" alt="AI 农事顾问" /><br><sub><b>AI 农事顾问</b> · 多会话 + 图片理解</sub></td>
+    <td width="50%"><img src="docs/screenshots/calendar.png" alt="农事日历" /><br><sub><b>农事日历</b> · 二十四节气要点 + 我的提醒</sub></td>
+  </tr>
+</table>
+
 ## 技术栈
 
 | 层 | 技术 |
