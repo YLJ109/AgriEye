@@ -269,7 +269,7 @@ async function generateReport() {
         <img src="${imgB64}" alt="样本图片" />
         <div class="meta">
           <p><span>问题类别：</span>${r.coarse_label}</p>
-          <p><span>细分类别：</span>${r.fine_label || '—'}</p>
+          <p><span>细分类别：</span>${r.fine_label || '待人工确认'}</p>
           <p><span>置信度：</span>${conf}%</p>
           <p><span>严重程度：</span>${sev}</p>
           <p><span>检测框：</span>${boxes.join('；') || '无'}</p>
@@ -541,7 +541,8 @@ onBeforeUnmount(() => { images.value.forEach(i => URL.revokeObjectURL(i.url)) })
                 <div class="stat-grid">
                   <div class="stat-row"><span class="stat-key">检测数量</span><span class="stat-val">{{ (selected.result.detection_boxes || []).length }} 个</span></div>
                   <div class="stat-row"><span class="stat-key">问题类别</span><span class="stat-val">{{ selected.result.coarse_label }}</span></div>
-                  <div class="stat-row"><span class="stat-key">细分类别</span><span class="stat-val">{{ selected.result.fine_label }}</span></div>
+                  <div class="stat-row"><span class="stat-key">细分类别</span><span class="stat-val">{{ selected.result.fine_label || '待人工确认' }}</span></div>
+                  <div class="stat-row" v-if="selected.result.mode === 'heuristic' && !selected.result.fine_label"><span class="stat-key">提示</span><span class="stat-val">本地视觉分析仅判断出问题大类，未确认具体病害，请结合农艺经验复核</span></div>
                   <div class="stat-row"><span class="stat-key">严重程度</span><span class="stat-val sev" :class="selected.result.severity">{{ SEV[selected.result.severity] || selected.result.severity }}</span></div>
                   <div class="stat-row" v-if="selected.result.mode === 'unknown'"><span class="stat-key">提示</span><span class="stat-val">未识别到农作物特征，请上传作物叶片或田间虫害照片</span></div>
                 </div>

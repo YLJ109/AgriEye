@@ -40,9 +40,11 @@ class Settings(BaseSettings):
         "phytotoxicity": "农药药害",
         "unknown": "未识别",
     }
-    # 细分类别（水稻/小麦/果蔬常见灾害）。
-    # ASSET-005：这里的数量随新增类别变化（当前 24 类），不要写死数字，
-    # 需要展示数量时用 len(settings.fine_classes) 或 /api/system/info 的 fine_classes_count。
+    # 细分类别（水稻/小麦/果蔬常见灾害）——这是**方案库**覆盖的类别。
+    # ASSET-005：这里的数量随新增类别变化，不要写死数字，用 len(settings.fine_classes)。
+    # 注意与「模型能识别的类别」区分：方案库覆盖 ≠ 模型能识别。
+    # 模型实际能产出的是 model_inference.MODEL_FINE_CLASSES（数量更少，由映射表自动算出），
+    # 对外宣称识别能力时必须用后者，混用就是过度宣称。
     # general_pest 为「无对应细分模型的其他农业害虫」兜底类。
     fine_classes: list[str] = [
         "rice_blast", "rice_bacterial_blight", "rice_sheath_blight", "rice_brown_planthopper",
@@ -54,7 +56,7 @@ class Settings(BaseSettings):
         "citrus_canker", "citrus_red_mite",
         "general_nitrogen_deficiency", "general_potassium_deficiency", "general_phosphorus_deficiency",
         "general_pesticide_injury",
-        "general_pest",
+        "general_pest", "general_spider_mite",
     ]
     img_size: int = 640
     conf_threshold: float = 0.35

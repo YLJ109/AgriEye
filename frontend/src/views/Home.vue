@@ -62,7 +62,9 @@ onBeforeUnmount(() => themeObserver?.disconnect())
 let actCount = 0
 onActivated(() => { actCount += 1; if (actCount > 1) { userStore.loadSystemInfo(); userStore.loadStats() } })
 
-const stats = computed(() => userStore.stats || { total_diagnoses: 0, by_category: {}, categories_supported: 4, fine_classes_supported: 23 })
+// 口径：fine_classes_supported 是「模型能识别的细分类数」（后端按映射表实算），
+// 不是方案库类别数。这里不要再写死数字——以前写死 23，与后端实际值对不上。
+const stats = computed(() => userStore.stats || { total_diagnoses: 0, by_category: {}, categories_supported: 4, fine_classes_supported: 0 })
 const catData = computed(() => {
   const c = stats.value.by_category || {}
   const cc = chartColors.value
@@ -164,7 +166,7 @@ const sparks = {
           </el-button>
         </div>
         <div class="hero-stats-inline">
-          <div><strong>23</strong><span>细分类别</span></div>
+          <div><strong>{{ stats.fine_classes_supported || '—' }}</strong><span>细分类别</span></div>
           <div><strong>4</strong><span>问题大类</span></div>
           <div><strong>100%</strong><span>离线可用</span></div>
         </div>

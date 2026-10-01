@@ -17,4 +17,6 @@ FINE_LABELS_ZH = {
     "general_nitrogen_deficiency": "缺氮黄化", "general_potassium_deficiency": "缺钾焦枯",
     "general_phosphorus_deficiency": "缺磷紫红", "general_pesticide_injury": "农药药害斑驳",
     "general_pest": "其他农业害虫",
+    # 叶螨/红蜘蛛（蜱螨目，不是昆虫）：原来被并进"番茄潜叶蝇"，会导致按昆虫开药方
+    "general_spider_mite": "叶螨红蜘蛛",
 }

@@ -5,6 +5,7 @@ from sqlalchemy import select, func
 
 from app.config import settings
 from app.core.auth import CurrentUser
+from app.core.model_inference import MODEL_FINE_CLASSES
 from app.db.database import get_session
 from app.db.models import Diagnosis, User
 
@@ -21,7 +22,10 @@ async def info():
     return {
         "app_name": settings.app_name,
         "categories": settings.coarse_labels_zh,
-        "fine_classes_count": len(settings.fine_classes),
+        # 口径澄清：能识别 ≠ 能出方案。以前这里直接返回方案库类别数（25），
+        # 被前端当成"支持识别的细分类数"展示，属于过度宣称（模型只能产出 14 个）。
+        "fine_classes_count": len(MODEL_FINE_CLASSES),
+        "fine_classes_with_scheme_count": len(settings.fine_classes),
         "device": settings.device,
         "offline_ready": True,
         "model_loaded": settings.model_path.exists(),
@@ -49,5 +53,7 @@ async def stats(current_user: CurrentUser, session: AsyncSession = Depends(get_s
         "by_category": by_category,
         "by_category_labels": by_category_labels,
         "categories_supported": len(settings.coarse_categories),
-        "fine_classes_supported": len(settings.fine_classes),
+        # 首页"细分类别"卡片展示的是识别能力，用模型可产出数（不是方案库数）
+        "fine_classes_supported": len(MODEL_FINE_CLASSES),
+        "fine_classes_with_scheme": len(settings.fine_classes),
     }

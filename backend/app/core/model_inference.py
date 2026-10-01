@@ -56,7 +56,9 @@ PLANT_CLASS_FINE = {
     'Corn gray leaf spot': 'corn_leaf_blight', 'Corn healthy': None, 'Corn insects damages': 'corn_borer',
     'Corn leaf blight': 'corn_leaf_blight', 'Corn mildew': 'corn_leaf_blight', 'Corn purple discoloration': 'general_phosphorus_deficiency',
     'Corn rust leaf': 'corn_leaf_blight', 'Corn smut': 'corn_leaf_blight', 'Corn streak': 'corn_leaf_blight',
-    'Corn stripe': 'corn_leaf_blight', 'Corn violet decoloration': 'general_nitrogen_deficiency', 'Corn yellow spots': 'corn_leaf_blight',
+    # 修：原映射到缺氮，与上一行的 purple discoloration（同一"紫化"症状）结论相反，
+    # 已统一为缺磷——玉米紫化的经典成因就是缺磷导致的糖分累积花青素。
+    'Corn stripe': 'corn_leaf_blight', 'Corn violet decoloration': 'general_phosphorus_deficiency', 'Corn yellow spots': 'corn_leaf_blight',
     'Corn yellowing': 'general_nitrogen_deficiency',
     'Grape Esca -Black_Measles-': 'tomato_late_blight', 'Grape black rot': 'tomato_late_blight', 'Grape healthy': None, 'Grape leaf blight': 'tomato_late_blight',
     'Peach bacterial spot': 'tomato_early_blight', 'Peach healthy': None,
@@ -66,7 +68,10 @@ PLANT_CLASS_FINE = {
     'Strawberry healthy': None, 'Strawberry leaf scorch': 'tomato_late_blight',
     'Tomato bacterial wilt': 'tomato_early_blight', 'Tomato blight leaf': 'tomato_late_blight', 'Tomato brown spots': 'tomato_early_blight',
     'Tomato healthy': None, 'Tomato late blight leaf': 'tomato_late_blight', 'Tomato leaf mosaic virus': 'tomato_early_blight',
-    'Tomato leaf yellow virus': 'tomato_early_blight', 'Tomato septoria leaf spot': 'tomato_early_blight', 'Tomato spider mites': 'tomato_leaf_miner',
+    'Tomato leaf yellow virus': 'tomato_early_blight', 'Tomato septoria leaf spot': 'tomato_early_blight',
+    # 修：原映射到 tomato_leaf_miner（潜叶蝇，双翅目昆虫）。叶螨/红蜘蛛是蜱螨目，不是昆虫，
+    # 用药完全不同（杀螨剂 vs 灭蝇胺），按潜叶蝇开方属于错误处方。改为独立的叶螨细分类。
+    'Tomato spider mites': 'general_spider_mite',
     'Tomato target spot': 'tomato_early_blight',
 }
 
@@ -108,6 +113,17 @@ INSECT_CLASS_FINE = {
     'undefined': None,
     'weevil': 'general_pest',
 }
+
+# ============================================================
+# 模型实际能产出的细分类（自动从上面两张映射表算出，单一数据源）
+# 与 config.fine_classes（方案库覆盖的类别）区分开：
+#   - 这里 = 「模型能识别出来的」，对外宣称能力时必须用这个数；
+#   - 那边 = 「能给出防治方案的」，包含模型检不到但知识库有方案的类别。
+# 两者不等，混用就是过度宣称。
+# ============================================================
+MODEL_FINE_CLASSES: frozenset[str] = frozenset(
+    v for v in list(PLANT_CLASS_FINE.values()) + list(INSECT_CLASS_FINE.values()) if v
+)
 
 
 @dataclass
@@ -398,12 +414,15 @@ class InferenceEngine:
         }
         coarse = max(scores, key=scores.get)
         conf = min(0.80, max(0.45, scores[coarse] + 0.35))  # 启发式上限 0.80，避免"假自信"
-        fine = self._default_fine(coarse)
+        # 修：以前这里会用 _default_fine() 编造一个具体病名（例如识别为真菌病害就直接
+        # 报"稻瘟病"），而稻瘟病根本不在模型覆盖范围内，等于用颜色统计冒充模型检出。
+        # 现在只给四大类，细分类留空，由展示层提示"需人工确认具体病害"。
+        box_label = settings.coarse_labels_zh.get(coarse, coarse)
         h_img, w_img = image.shape[:2]
         boxes = [{"x1": 0.1 * w_img, "y1": 0.1 * h_img,
                   "x2": 0.9 * w_img, "y2": 0.9 * h_img,
-                  "conf": conf, "class": fine}]
-        return DetectionResult(coarse, fine, conf, self._severity(conf), boxes, mode="heuristic")
+                  "conf": conf, "class": box_label}]
+        return DetectionResult(coarse, None, conf, self._severity(conf), boxes, mode="heuristic")
 
     # ---------- 辅助 ----------
     @staticmethod
@@ -420,14 +439,8 @@ class InferenceEngine:
             return "pest"
         return "fungal_disease"
 
-    @staticmethod
-    def _default_fine(coarse: str) -> str:
-        return {
-            "fungal_disease": "rice_blast",
-            "pest": "wheat_aphid",
-            "deficiency": "general_nitrogen_deficiency",
-            "phytotoxicity": "general_pesticide_injury",
-        }.get(coarse, "rice_blast")
+    # 注：原 _default_fine()（启发式给四大类编造具体病名）已移除。
+    # 启发式只输出四大类、细分类为 None，避免"稻瘟病"这类模型根本检不到的结论被当成识别结果。
 
     @staticmethod
     def _severity(conf: float) -> str:
