@@ -101,9 +101,9 @@ onActivated(() => { actCount += 1; if (actCount > 1) { load(); userStore.loadSta
     <!-- 统计 -->
     <section class="stats-grid">
       <StatCard label="累计诊断" :value="userStore.stats?.total_diagnoses || 0" icon="microscope" accent="accent" />
-      <StatCard label="病害记录" :value="userStore.categoryStats['真菌病害'] || 0" icon="fungus" accent="accent" />
-      <StatCard label="虫害记录" :value="userStore.categoryStats['虫害'] || 0" icon="bug" accent="accent" />
-      <StatCard label="缺肥/药害" :value="(userStore.categoryStats['土壤缺肥'] || 0) + (userStore.categoryStats['农药药害'] || 0)" icon="trendDown" accent="tech" />
+      <StatCard label="病害记录" :value="userStore.categoryStats['fungal_disease'] || 0" icon="fungus" accent="accent" />
+      <StatCard label="虫害记录" :value="userStore.categoryStats['pest'] || 0" icon="bug" accent="accent" />
+      <StatCard label="缺肥/药害" :value="(userStore.categoryStats['deficiency'] || 0) + (userStore.categoryStats['phytotoxicity'] || 0)" icon="trendDown" accent="tech" />
     </section>
 
     <!-- 筛选栏 -->

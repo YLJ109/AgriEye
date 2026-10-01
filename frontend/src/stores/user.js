@@ -13,7 +13,9 @@ export const useUserStore = defineStore('user', () => {
   // 兼容旧代码里直接读 userId 的写法
   const userId = computed(() => user.value?.id ?? 0)
   const nickname = computed(() => user.value?.nickname || '农户')
+  // FUNC-006：统计用英文 key（fungal_disease 等），中文标签查 categoryLabels
   const categoryStats = computed(() => stats.value?.by_category || {})
+  const categoryLabels = computed(() => stats.value?.by_category_labels || {})
 
   async function loadSystemInfo() {
     try { systemInfo.value = await api.systemInfo() } catch { /* ignore */ }
@@ -70,7 +72,7 @@ export const useUserStore = defineStore('user', () => {
 
   return {
     token, user, stats, systemInfo, loading,
-    isAuthenticated, userId, nickname, categoryStats,
+    isAuthenticated, userId, nickname, categoryStats, categoryLabels,
     loadSystemInfo, loadStats, login, register, restore, logout,
   }
 })

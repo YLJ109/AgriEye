@@ -127,6 +127,10 @@ class InferenceEngine:
         self._session = None      # 病害模型 onnxruntime session
         self._pest_session = None  # 虫害模型 onnxruntime session
         self._loaded = False
+        # PERF-002：按图像内容缓存推理结果。重复上传同一张图（批量重试、误点、
+        # 分页来回切换）不必再跑一遍 CPU 上的 ONNX，命中就直接返回。
+        self._result_cache: dict[str, DetectionResult] = {}
+        self._cache_max = 128
 
     def load(self) -> None:
         if self._loaded:
@@ -160,7 +164,20 @@ class InferenceEngine:
         self._loaded = True
 
     def predict(self, image: np.ndarray) -> DetectionResult:
-        """对单张图像推理。三段式：病害模型 -> 虫害模型 -> 启发式回退。
+        """对单张图像推理（带结果缓存，见 PERF-002）。"""
+        key = hashlib.md5(image.tobytes()).hexdigest()
+        hit = self._result_cache.get(key)
+        if hit is not None:
+            logger.debug("推理结果缓存命中")
+            return hit
+        result = self._predict_impl(image)
+        if len(self._result_cache) >= self._cache_max:
+            self._result_cache.clear()   # 简单清空即可，缓存只用于短期去重
+        self._result_cache[key] = result
+        return result
+
+    def _predict_impl(self, image: np.ndarray) -> DetectionResult:
+        """真正的推理逻辑。三段式：病害模型 -> 虫害模型 -> 启发式回退。
 
         病害模型是"叶部病害"模型，对虫害图片（如蚜虫特写）只会给出不相关的
         低分病害响应，因此专门接一个虫害检测模型；两模型都无可信检出时才

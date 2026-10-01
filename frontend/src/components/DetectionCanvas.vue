@@ -44,8 +44,9 @@ function draw() {
   props.boxes.forEach((b) => {
     const x1 = (b.x1 ?? b.x) ?? 0
     const y1 = (b.y1 ?? b.y) ?? 0
-    const x2 = (b.x2 ?? (((b.x ?? 0) + (b.width ?? 0)))) ?? 0
-    const y2 = (b.y2 ?? (((b.y ?? 0) + (b.height ?? 0)))) ?? 0
+    // 兜底是算术结果，恒不为 null，外层再 ?? 0 永远不触发（ESLint no-constant-binary-expression）
+    const x2 = b.x2 ?? ((b.x ?? 0) + (b.width ?? 0))
+    const y2 = b.y2 ?? ((b.y ?? 0) + (b.height ?? 0))
     const x = x1 * sx, y = y1 * sy, bw = (x2 - x1) * sx, bh = (y2 - y1) * sy
     if (bw < 1 || bh < 1) return
     ctx.strokeStyle = color

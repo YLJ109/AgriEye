@@ -57,11 +57,14 @@ const stats = computed(() => userStore.stats || { total_diagnoses: 0, by_categor
 const catData = computed(() => {
   const c = stats.value.by_category || {}
   const cc = chartColors.value
+  // FUNC-006：key 用英文大类，展示名从后端返回的 label 映射取（缺省回退固定中文）
+  const labels = stats.value.by_category_labels || {}
+  const zh = (k, fallback) => labels[k] || fallback
   return [
-    { name: '真菌病害', value: c['真菌病害'] || 0, color: cc.fungal },
-    { name: '虫害', value: c['虫害'] || 0, color: cc.pest },
-    { name: '土壤缺肥', value: c['土壤缺肥'] || 0, color: cc.deficiency },
-    { name: '农药药害', value: c['农药药害'] || 0, color: cc.phytotoxicity },
+    { name: zh('fungal_disease', '真菌病害'), value: c['fungal_disease'] || 0, color: cc.fungal },
+    { name: zh('pest', '虫害'), value: c['pest'] || 0, color: cc.pest },
+    { name: zh('deficiency', '土壤缺肥'), value: c['deficiency'] || 0, color: cc.deficiency },
+    { name: zh('phytotoxicity', '农药药害'), value: c['phytotoxicity'] || 0, color: cc.phytotoxicity },
   ]
 })
 

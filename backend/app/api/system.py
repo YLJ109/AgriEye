@@ -40,10 +40,14 @@ async def stats(current_user: CurrentUser, session: AsyncSession = Depends(get_s
         .where(Diagnosis.user_id == current_user.id)
         .group_by(Diagnosis.coarse_category)
     )).all()
-    by_category = {settings.coarse_labels_zh.get(k, k): v for k, v in rows}
+    # FUNC-006：统计口径统一用英文 key（稳定、不受文案改动影响），
+    # 中文标签另给一张映射表，展示层按需取用。
+    by_category = {k: v for k, v in rows}
+    by_category_labels = {k: settings.coarse_labels_zh.get(k, k) for k, _ in rows}
     return {
         "total_diagnoses": total,
         "by_category": by_category,
+        "by_category_labels": by_category_labels,
         "categories_supported": len(settings.coarse_categories),
         "fine_classes_supported": len(settings.fine_classes),
     }

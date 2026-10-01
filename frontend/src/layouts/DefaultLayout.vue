@@ -131,7 +131,10 @@ watch(() => route.path, () => { closeMobileSidebar(); closePopovers() })
     <div class="main-wrap">
       <header class="topbar">
         <div class="topbar-left">
-          <button class="collapse-btn" @click.stop="toggleCollapse">
+          <!-- UX-002：纯图标按钮对读屏软件不可见，补 aria-label -->
+          <button class="collapse-btn" @click.stop="toggleCollapse"
+                  :aria-label="collapsed ? '展开侧边栏' : '收起侧边栏'"
+                  :title="collapsed ? '展开侧边栏' : '收起侧边栏'">
             <AppIcon :name="collapsed ? 'panelOpen' : 'panelClose'" :size="20" />
           </button>
           <div class="breadcrumb">
@@ -141,7 +144,8 @@ watch(() => route.path, () => { closeMobileSidebar(); closePopovers() })
           </div>
         </div>
         <div class="topbar-right">
-          <button class="icon-btn" @click.stop="toggleTheme" title="切换主题">
+          <button class="icon-btn" @click.stop="toggleTheme" title="切换主题"
+                  :aria-label="theme === 'light' ? '切换到深色模式' : '切换到浅色模式'">
             <AppIcon :name="theme === 'light' ? 'moonOutline' : 'sunOutline'" :size="20" />
           </button>
         </div>

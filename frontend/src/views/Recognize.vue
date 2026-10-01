@@ -258,8 +258,8 @@ async function generateReport() {
       ;(r.detection_boxes || []).forEach((b, idx) => {
         const x1 = (b.x1 ?? b.x) ?? 0
         const y1 = (b.y1 ?? b.y) ?? 0
-        const x2 = (b.x2 ?? ((b.x ?? 0) + (b.width ?? 0))) ?? 0
-        const y2 = (b.y2 ?? ((b.y ?? 0) + (b.height ?? 0))) ?? 0
+        const x2 = b.x2 ?? ((b.x ?? 0) + (b.width ?? 0))
+        const y2 = b.y2 ?? ((b.y ?? 0) + (b.height ?? 0))
         boxes.push(`框${idx + 1}: (${Math.round(x1)}, ${Math.round(y1)}) → (${Math.round(x2)}, ${Math.round(y2)})`)
       })
       const imgB64 = await imageToDataUrl(img)
@@ -406,7 +406,9 @@ onBeforeUnmount(() => { images.value.forEach(i => URL.revokeObjectURL(i.url)) })
                 <span class="frame-no">{{ String(i + 1).padStart(2, '0') }}</span>
                 <img :src="img.url" />
                 <span class="frame-pip" :class="img.status"></span>
-                <button class="frame-del" @click.stop="removeImage(img.id)"><X :size="12" /></button>
+                <!-- UX-002：删除按钮只有图标，补 aria-label 供读屏软件识别 -->
+                <button class="frame-del" @click.stop="removeImage(img.id)"
+                        aria-label="移除这张图片" title="移除"><X :size="12" /></button>
               </div>
             </div>
 

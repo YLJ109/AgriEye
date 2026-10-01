@@ -9,8 +9,9 @@
 ## 核心创新点
 
 1. **多模态区分四类田间问题** —— 真菌病害 / 虫害 / 土壤缺肥 / 农药药害，解决肉眼易混淆痛点
-2. **小样本训练，泛化能力强** —— 弱监督小样本 + 田间数据增强，无需上万数据集
-3. **离线轻量化部署** —— 模型量化压缩，手机端无网络也能识别，适配农村偏远场景
+2. **双模型级联 + 域检查门** —— 病害模型（55 类）与虫害模型（21 类）按序推理，
+   并在**模型之前**加一道轻量域检查，杜绝无关图片（截图、食物、监控画面）被高置信度误判
+3. **离线轻量化部署** —— ONNX Runtime 纯 CPU 推理，无需 GPU、无需联网即可识别，适配农村偏远场景
 4. **AI 农事大模型顾问** —— 农业垂直 RAG 知识库，输出精准用药、施肥、绿色减药方案
 
 ## 技术栈
@@ -18,9 +19,15 @@
 | 层 | 技术 |
 |---|---|
 | 前端 | Vue 3 + Vite + Pinia + Element Plus |
-| 后端 | Python FastAPI + SQLAlchemy + SQLite |
-| 算法 | YOLOv8-lite + SAM 小样本分割 + FAISS RAG |
-| 推理 | PyTorch(CPU) + ONNXRuntime + INT8 量化 |
+| 后端 | Python FastAPI + SQLAlchemy + SQLite + JWT 认证 |
+| 推理 | ONNX Runtime（CPU）· YOLOv8n 病害模型 + YOLOv8m 虫害模型 |
+| 知识库 | FAISS 向量检索 + 关键词回退（离线可用） |
+| 自训管线 | `algorithm/`（可选：数据集构建 → 训练 → 量化 → 导出 ONNX，用于替换开源权重） |
+
+> **关于模型来源（口径说明）**：当前线上推理使用的是两个开源预训练权重
+> （来源见下方「获取模型权重」），本项目的工作集中在**本地双模型编排、域检查门、
+> 细分类映射与农业知识方案生成**；`algorithm/` 提供自训链路，可用于用自己的田间数据
+> 微调后替换权重，不是当前推理路径的前置条件。
 
 ## 项目结构
 
@@ -67,7 +74,8 @@ AgriculturalScience/
 cd backend
 pip install -r requirements.txt
 python knowledge/build_vector_db.py   # 构建 RAG 知识库
-uvicorn app.main:app --reload         # 启动 http://localhost:8001
+# 固定 8001 端口；不加 --reload（改完代码手动重启更可靠）
+uvicorn app.main:app --host 0.0.0.0 --port 8001
 ```
 
 ### 2. 启动前端
@@ -75,8 +83,13 @@ uvicorn app.main:app --reload         # 启动 http://localhost:8001
 ```bash
 cd frontend
 npm install
-npm run dev                           # 启动 http://localhost:5173
+npm run dev -- --port 5188 --strictPort   # 启动 http://localhost:5188
 ```
+
+> 前端固定 5188：`vite.config` 默认端口是 5173，而 5173 已被本机另一个项目占用，
+> 直接 `npm run dev` 会被自动顺延或占用他人端口。生产预览同理：
+> `npm run build && npm run preview -- --port 5188 --strictPort`。
+> 也可用根目录的 `start.bat` 一键启动（已统一为 8001 + 5188）。
 
 ### 3.（可选）训练模型
 

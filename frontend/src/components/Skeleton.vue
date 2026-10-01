@@ -1,5 +1,6 @@
 <script setup>
-const props = defineProps({
+// 模板里直接用 shape/width 等，无需接收返回值
+defineProps({
   shape: { type: String, default: 'rect' },
   width: { type: String, default: '100%' },
   height: { type: String, default: '16px' },

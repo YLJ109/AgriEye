@@ -5,7 +5,7 @@ import { ElMessage } from 'element-plus'
 // SEC-004：Markdown 必须由 MarkdownView（marked + DOMPurify）渲染，
 // 本地 renderMd 只做 marked.parse，缺少净化步骤，AI 返回内容里的 <script>/onerror 会被原样执行。
 import MarkdownView from '@/components/MarkdownView.vue'
-import { Plus, MessageSquare, Trash2, Settings, Bot, User, Leaf, ImagePlus, X, SendHorizontal, Lightbulb, Bug, TrendingDown, AlertTriangle, ClipboardList } from 'lucide-vue-next'
+import { Plus, MessageSquare, Trash2, Settings, Bot, User, Leaf, ImagePlus, X, SendHorizontal, Lightbulb, Bug, TrendingDown, AlertTriangle } from 'lucide-vue-next'
 
 const settings = ref(JSON.parse(localStorage.getItem('advisor_settings') || 'null') || {
   apiKey: '', textModel: 'glm-4-flash', visionModel: 'glm-4v-flash',
@@ -94,7 +94,7 @@ async function send() {
       stream: true,
     })
     current.value.messages[pendingIdx] = { role: 'assistant', content: res.content || '', time: Date.now() }
-  } catch (e) {
+  } catch {
     current.value.messages[pendingIdx] = { role: 'assistant', content: '请求失败，请稍后重试', error: true, time: Date.now() }
   } finally {
     loading.value = false
