@@ -23,6 +23,25 @@ from app.schemas import RecognizeResponse
 router = APIRouter()
 
 
+def _sniff_image_magic(raw: bytes) -> bool:
+    """按文件头魔数判断真实图片类型（SEC-007）。
+
+    扩展名由客户端提供、可任意伪造（把 .exe 改名 .jpg 也能通过扩展名校验），
+    因此以字节签名为准。只放行白名单里与 allowed_extensions 对应的格式。
+    """
+    if len(raw) < 12:
+        return False
+    if raw[:8] == b"\x89PNG\r\n\x1a\n":                       # PNG
+        return True
+    if raw[:3] == b"\xff\xd8\xff":                            # JPEG
+        return True
+    if raw[:2] == b"BM":                                      # BMP
+        return True
+    if raw[:4] == b"RIFF" and raw[8:12] == b"WEBP":           # WEBP
+        return True
+    return False
+
+
 @router.post("", response_model=RecognizeResponse)
 async def recognize(
     current_user: CurrentUser,
@@ -42,6 +61,9 @@ async def recognize(
         raise HTTPException(413, f"图片过大，限制 {settings.max_upload_mb}MB")
     if not raw:
         raise HTTPException(400, "图片内容为空")
+    # SEC-007：扩展名可伪造，按文件头魔数再验一次真实类型
+    if not _sniff_image_magic(raw):
+        raise HTTPException(400, "文件内容不是有效图片（扩展名与真实格式不符）")
 
     # ---------- 保存 ----------
     safe_name = Path(original_name).name.replace("/", "_").replace("\\", "_")

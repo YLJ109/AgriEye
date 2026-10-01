@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     app_name: str = "农智 AI 顾问系统"
     host: str = "0.0.0.0"
     port: int = 8001
+    debug: bool = False   # 仅调试时回显异常细节（SEC-009），生产保持 False
     # 前端固定 5188（5173 属另一个项目，勿占用）。如需其他端口，用环境变量 CORS_ORIGINS 覆盖。
     cors_origins: list[str] = [
         "http://localhost:5188", "http://127.0.0.1:5188",
@@ -53,6 +54,17 @@ class Settings(BaseSettings):
     pest_conf_threshold: float = 0.40  # 虫害模型阈值略高，避免弱响应误报
     iou_threshold: float = 0.45
     device: str = "cpu"  # 强制 CPU 推理，适配农村离线场景
+
+    # ---------- 域检查门（ARCH-001：阈值集中可调，不再硬编码在推理器里）----------
+    # 作用：模型之前先判断「这张图像不像农作物」，不过门直接返回未识别，避免域外图被高置信度误检
+    domain_gate_enabled: bool = True
+    domain_gate_green_min: float = 0.05   # 植被绿占比下限（Hue 35~85）
+    domain_gate_yellow_min: float = 0.60  # 黄叶占比下限（Hue 20~35，枯黄病害叶片）
+    domain_gate_edge_max: float = 0.08    # Canny 边缘密度上限（排除文字/截图/建筑）
+
+    # ---------- AI 顾问 ----------
+    # 服务端配置后，浏览器侧无需保存明文 API Key（SEC-005）
+    zhipu_api_key: str = ""
 
     # ---------- RAG ----------
     embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"

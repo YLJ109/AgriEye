@@ -7,6 +7,9 @@ venv/
 *.pyc
 __pycache__/
 *.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
 
 # ===== 模型权重（226MB，GitHub 单文件上限 100MB，不放仓库；见 README「获取模型」）=====
 backend/data/models/*.onnx

@@ -5,6 +5,8 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from loguru import logger
 
+from app.config import settings
+
 router = APIRouter()
 
 ZHIPU_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
@@ -111,9 +113,16 @@ def _upstream_error(status: int, body: str) -> HTTPException:
 
 @router.post("/completions")
 async def chat_completions(req: ChatRequest):
-    """转发到智谱 GLM API，支持纯文字、图片理解和流式输出。"""
+    """转发到智谱 GLM API，支持纯文字、图片理解和流式输出。
+
+    密钥来源优先级：请求体 > 服务端环境变量 ZHIPU_API_KEY。
+    服务端配置后，浏览器侧无需保存明文 Key（SEC-005 的推荐用法）。
+    """
+    server_key = (settings.zhipu_api_key or "").strip()
+    if not req.api_key and server_key:
+        req.api_key = server_key
     if not req.api_key:
-        raise HTTPException(400, "请先配置 API Key")
+        raise HTTPException(400, "请先配置 API Key（前端设置，或服务端环境变量 ZHIPU_API_KEY）")
     payload, headers = _build_payload(req)
     try:
         status, text = await _fetch(payload, headers)

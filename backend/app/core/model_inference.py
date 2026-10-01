@@ -209,12 +209,21 @@ class InferenceEngine:
         植物：蚜虫叶(0.080/0.007/0.037)、玉米病叶(0.95/0.001/0.004)、虫卵叶(0.695/0.107/0.067)
         非植物：篮球截图(0.018/0.001/0.062)、食物(0.006/0.278/0.100)、教室监控(0.003/0.046/0.108)
         """
+        # ARCH-001：阈值统一从 config 读取，调参不必改推理代码
+        if not settings.domain_gate_enabled:
+            return True
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         h, s, v = cv2.split(hsv)
         green_ratio = float(np.mean((h >= 35) & (h <= 85) & (s > 40) & (v > 50)))
         yellow_ratio = float(np.mean((h >= 20) & (h < 35) & (s > 60) & (v > 50)))
         edge_density = float(np.mean(cv2.Canny(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), 80, 160) > 0))
-        return (green_ratio >= 0.05 or yellow_ratio >= 0.6) and edge_density <= 0.08
+        logger.debug(
+            f"域检查特征 green={green_ratio:.3f} yellow={yellow_ratio:.3f} edge={edge_density:.3f}"
+        )
+        return (
+            green_ratio >= settings.domain_gate_green_min
+            or yellow_ratio >= settings.domain_gate_yellow_min
+        ) and edge_density <= settings.domain_gate_edge_max
 
     # ---------- ONNX 推理 ----------
     def _predict_disease(self, image: np.ndarray) -> DetectionResult:
@@ -386,8 +395,15 @@ class InferenceEngine:
         return "mild"
 
     @staticmethod
-    def image_hash(image: np.ndarray) -> str:
-        return hashlib.md5(image.tobytes()[:1024]).hexdigest()[:12]
+    def image_hash(image) -> str:
+        """内容哈希（全量字节）。
+
+        早期版本只取前 1024 字节做哈希，不同图片（尤其同一来源连拍）容易撞名，
+        导致 uploads 目录越堆越多。改为全内容 md5 后，同一张图重复上传会落到同一
+        文件名并覆盖，目录不再堆积（配合 CONC-001 入库幂等）。
+        """
+        data = image.tobytes() if hasattr(image, "tobytes") else bytes(image)
+        return hashlib.md5(data).hexdigest()[:16]
 
 
 inference_engine = InferenceEngine()
