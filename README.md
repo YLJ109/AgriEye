@@ -26,8 +26,7 @@
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/home.png" alt="首页工作台" /><br><sub><b>首页工作台</b> · 离线可用状态与累计诊断概览</sub></td>
-    <td width="50%"><img src="docs/screenshots/home-mobile.png" alt="移动端首页" /><br><sub><b>移动端首页</b> · 390×844 自适应</sub></td>
+    <td colspan="2"><img src="docs/screenshots/home.png" alt="首页工作台" /><br><sub><b>首页工作台</b> · 离线可用状态与累计诊断概览</sub></td>
   </tr>
   <tr>
     <td width="50%"><img src="docs/screenshots/recognize.png" alt="智能识别" /><br><sub><b>智能识别</b> · 上传→批量检测→人工审核三段式</sub></td>

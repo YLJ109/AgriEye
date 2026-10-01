@@ -9,7 +9,7 @@
  *        -H 'Content-Type: application/json' -d '{"username":"admin","password":"123456"}' | jq -r .access_token)
  *
  * 用法：node scripts/shoot-screenshots.mjs
- * 产物：docs/screenshots/*.png（1.5 倍缩放，6 张约 2.9MB）
+ * 产物：docs/screenshots/*.png（1.5 倍缩放，5 张约 2.1MB）
  *
  * 坑位备忘：
  * - 识别页上传后必须点「开始批量检测」才会出结果，只 setInputFiles 不会触发推理；
@@ -66,18 +66,7 @@ try {
   await page.waitForTimeout(2500)
   await page.screenshot({ path: path.join(OUT, 'recognize.png') })
   console.log('OK recognize.png')
-
-  // 移动端首页（响应式验证）
-  const m = await browser.newContext({
-    viewport: { width: 390, height: 844 }, deviceScaleFactor: 1.5,
-    isMobile: true, hasTouch: true, locale: 'zh-CN',
-  })
-  await m.addInitScript((t) => localStorage.setItem('agrieye_token', t), TOKEN)
-  const mp = await m.newPage()
-  await mp.goto(BASE + '/', { waitUntil: 'networkidle' })
-  await mp.waitForTimeout(2200)
-  await mp.screenshot({ path: path.join(OUT, 'home-mobile.png') })
-  console.log('OK home-mobile.png')
+  // 注：原本还截了一张 390×844 的移动端口截图，README 已移除（移动端图不要），此处不再生成。
 } catch (e) {
   console.error('FAIL', e.message)
 } finally {
