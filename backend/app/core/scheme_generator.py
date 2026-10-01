@@ -1,6 +1,8 @@
 """治理方案生成器 - 根据识别类别 + RAG 知识生成用药/施肥/绿色替代方案。"""
 from __future__ import annotations
 
+from loguru import logger
+
 from app.config import settings
 from app.core.rag_engine import rag_engine
 
@@ -64,7 +66,27 @@ SCHEME_TEMPLATES: dict[str, dict] = {
     },
 }
 
-SEVERITY_FACTOR = {"mild": 0.7, "moderate": 1.0, "severe": 1.3}
+def _unknown_scheme(severity: str, crop: str | None, fine_class: str | None) -> dict:
+    """未识别（域检查门拒绝 / 两模型都没检出）时的方案：不给任何用药建议。
+
+    曾经的写法是 `SCHEME_TEMPLATES.get(coarse, SCHEME_TEMPLATES["fungal_disease"])`，
+    即把 unknown 静默降级成「真菌病害」模板 —— 一张被系统明确判定「看不出是农作物」
+    的图，也会拿到苯醚甲环唑、吡唑醚菌酯两个处方，属于拿模板冒充诊断结论。
+    这里显式返回空方案，由前端提示重新拍摄/咨询农技部门。
+    """
+    return {
+        "diagnosis": "未识别",
+        "cause": "该图片未通过农作物特征检查，或检测模型未给出可信目标，"
+                 "无法确认是病害、虫害、缺肥还是药害，因此不提供用药建议。",
+        "chemicals": [],
+        "green_alternatives": [],
+        "fertilization": [],
+        "prevention": ["重新拍摄清晰的作物叶片/田间虫情照片，避免逆光、过远或含大量文字UI的画面"],
+        "severity": severity,
+        "crop": crop or "通用作物",
+        "fine_class": fine_class,
+        "remark": "未识别到农作物特征，请重新拍摄或咨询当地农技部门。",
+    }
 
 
 def generate_scheme(
@@ -73,18 +95,28 @@ def generate_scheme(
     crop: str | None = None,
     severity: str = "moderate",
 ) -> dict:
-    """生成完整治理方案，并尝试用 RAG 补充针对性建议。"""
-    template = SCHEME_TEMPLATES.get(coarse_category, SCHEME_TEMPLATES["fungal_disease"]).copy()
-    factor = SEVERITY_FACTOR.get(severity, 1.0)
+    """生成完整治理方案，并尝试用 RAG 补充针对性建议。
 
-    # 根据严重程度调整用药频次说明
+    口径说明（别对外说成「AI 生成」）：
+    - 主体是内置 agronomy 模板 `SCHEME_TEMPLATES`（4 大类的固定处方 + 本地 RAG 检索片段），
+      不是大模型生成；
+    - 只有前端点「生成 AI 治理方案」时，才真的调智谱 GLM 生成（需配 API Key）。
+    """
+    if coarse_category == "unknown":
+        return _unknown_scheme(severity, crop, fine_class)
+
+    template = SCHEME_TEMPLATES.get(coarse_category)
+    if template is None:
+        logger.warning(f"未知大类 {coarse_category}，按真菌病害模板兜底")
+        template = SCHEME_TEMPLATES["fungal_disease"]
+
     scheme = {
         "diagnosis": template["diagnosis"],
         "cause": template["cause"],
-        "chemicals": _scale(template.get("chemicals", []), factor),
-        "green_alternatives": template.get("green_alternatives", []),
-        "fertilization": template.get("fertilization", []),
-        "prevention": template.get("prevention", []),
+        "chemicals": _copy(template.get("chemicals", [])),
+        "green_alternatives": _copy(template.get("green_alternatives", [])),
+        "fertilization": _copy(template.get("fertilization", [])),
+        "prevention": _copy(template.get("prevention", [])),
         "severity": severity,
         "crop": crop or "通用作物",
         "fine_class": fine_class,
@@ -104,14 +136,12 @@ def generate_scheme(
     return scheme
 
 
-def _scale(chemicals: list[dict], factor: float) -> list[dict]:
-    out = []
-    for c in chemicals:
-        nc = dict(c)
-        if factor != 1.0:
-            nc["freq"] = f"{c.get('freq','')}（严重程度调整系数 {factor}）"
-        out.append(nc)
-    return out
+def _copy(items: list) -> list:
+    """模板条目是模块级常量，直接引用会让「方案被改过」无法察觉，返回副本。
+
+    条目有两种：dict（药剂/绿替/施肥）与 str（prevention 要点）。
+    """
+    return [dict(i) if isinstance(i, dict) else i for i in items]
 
 
 def _remark(severity: str, coarse: str) -> str:
