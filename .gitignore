@@ -27,7 +27,11 @@ backend/data/*.sqlite
 backend/data/*.sqlite3
 backend/data/vector_db/
 backend/data/agri.db-journal
+# 预览模式产生的临时图片（DATA-003：24h 后自动清理）
+backend/data/preview_tmp/
 *.bak
+# 无障碍扫描工具的浏览器会话残留
+.playwright-cli/
 
 # ===== 环境变量与密钥 =====
 # 注意：.gitignore 不支持行尾注释，`pattern # 说明` 会把整行当成文件名，规则永远不会命中

@@ -26,7 +26,8 @@ export default defineConfig({
       output: {
         manualChunks: {
           'echarts': ['echarts'],
-          'element-plus': ['element-plus'],
+          // PERF-001：不再把 'element-plus' 钉成整包 chunk —— 那会让按需引入失效、
+          // 整套组件重新被打进来。按需后由 rollup 按实际引用自然分割。
           'vue-vendor': ['vue', 'vue-router', 'pinia'],
         },
       },

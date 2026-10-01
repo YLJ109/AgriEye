@@ -77,7 +77,7 @@ onMounted(async () => {
         <p class="advice-text">{{ currentAdvice.advice }}</p>
         <p class="crop-tip" v-if="currentAdvice.crop_tip">{{ currentAdvice.crop_tip }}</p>
         <div class="crop-select">
-          <el-select v-model="selectedCrop" placeholder="选择作物查看针对性建议" clearable @change="loadAdvice" size="small">
+          <el-select v-model="selectedCrop" aria-label="选择作物" placeholder="选择作物查看针对性建议" clearable @change="loadAdvice" size="small">
             <el-option v-for="c in crops" :key="c" :label="c" :value="c" />
           </el-select>
         </div>
@@ -114,12 +114,12 @@ onMounted(async () => {
       <section class="card" v-reveal data-delay="2">
         <SectionHeader title="添加农事提醒" icon="plus" />
         <div class="form">
-          <el-input v-model="newReminder.title" placeholder="提醒标题" maxlength="60" show-word-limit />
+          <el-input v-model="newReminder.title" aria-label="提醒标题" placeholder="提醒标题" maxlength="60" show-word-limit />
           <div class="form-row">
-            <el-select v-model="newReminder.crop" placeholder="作物" clearable>
+            <el-select v-model="newReminder.crop" aria-label="作物" placeholder="作物" clearable>
               <el-option v-for="c in crops" :key="c" :label="c" :value="c" />
             </el-select>
-            <el-select v-model="newReminder.priority" placeholder="优先级">
+            <el-select v-model="newReminder.priority" aria-label="优先级" placeholder="优先级">
               <el-option label="低" :value="1" /><el-option label="中" :value="2" /><el-option label="高" :value="3" />
             </el-select>
           </div>
@@ -213,7 +213,8 @@ onMounted(async () => {
 .term-node.passed .term-dot { background: var(--accent-secondary); opacity: 0.5; }
 .term-card { background: var(--bg-muted); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-3); text-align: center; transition: var(--transition); }
 .term-node.active .term-card { background: var(--accent-soft); border-color: var(--accent); }
-.term-card strong { display: block; color: var(--accent-hover); font-size: var(--text-sm); margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* UX-002：--accent-hover 在 --accent-soft 底上只有 4.49:1（深）/4.09:1（浅），改用 --accent-text */
+.term-card strong { display: block; color: var(--accent-text); font-size: var(--text-sm); margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .term-card p { font-size: var(--text-xs); color: var(--fg-muted); line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .term-node { cursor: pointer; }
 .term-node:hover .term-card { border-color: var(--accent); box-shadow: var(--shadow-sm); transform: translateY(-2px); }

@@ -62,6 +62,13 @@ class Settings(BaseSettings):
     iou_threshold: float = 0.45
     device: str = "cpu"  # 强制 CPU 推理，适配农村离线场景
 
+    # ---------- 推理线程（PERF-002：批量并发下的线程超订治理）----------
+    # onnxruntime 默认 intra_op 线程数 = 物理核数。前端批量是 3 并发，
+    # 3 × 核数会严重线程超订：实测并发 2 降 67%、并发 3 反而只降 14%（还抖动到 56%）。
+    # 把单次推理的核内线程压到固定值，把并行度让给请求级并发，吞吐才稳定。
+    onnx_intra_threads: int = 2
+    onnx_inter_threads: int = 1
+
     # ---------- 域检查门（ARCH-001：阈值集中可调，不再硬编码在推理器里）----------
     # 作用：模型之前先判断「这张图像不像农作物」，不过门直接返回未识别，避免域外图被高置信度误检
     domain_gate_enabled: bool = True

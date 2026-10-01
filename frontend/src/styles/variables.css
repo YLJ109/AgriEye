@@ -29,7 +29,10 @@
   --fg: #E8F2EA;
   --fg-secondary: #C2D2C6;
   --fg-muted: #8FA399;
-  --fg-subtle: #61786C;
+  /* UX-002：subtle 用于正文级弱化文本（提示、时间戳、副标题），必须满足 WCAG AA 4.5:1。
+     旧值 #61786C 对 --bg-elevated 只有 3.72:1、对 --bg-muted 3.38:1，全站小字都不达标；
+     新值 #7F9488 实测 5.5:1 / 5.0:1。真正的装饰用途（圆点、图标、进度条）不受影响。 */
+  --fg-subtle: #7F9488;
   --fg-on-accent: #04140C;
 
   --border: #1E3326;
@@ -43,6 +46,10 @@
   --accent-soft: rgba(31, 185, 107, 0.12);
   --accent-gradient: linear-gradient(135deg, #1FB96B 0%, #34D399 100%);
   --accent-gradient-soft: linear-gradient(135deg, rgba(31,185,107,0.16) 0%, rgba(52,211,153,0.12) 100%);
+  /* 强调色**当文字用**时的取值（UX-002）：--accent 是给按钮底色设计的，直接拿来写字
+     在 --accent-soft 底上只有 4.49:1（深色）/ 4.09:1（浅色），过不了 AA。
+     这里给一个明度更高（深色主题）或更深（浅色主题）的专用值。 */
+  --accent-text: #34D399;
 
   /* 锐利强调：电光青柠（唯一强调色，只给关键 AI 动作） */
   --lime: #BEF264;
@@ -178,8 +185,11 @@
 
   --fg: #14221A;
   --fg-secondary: #37463D;
-  --fg-muted: #5C6E62;
-  --fg-subtle: #83927F;
+  /* 亮色下要同时压住「白底」和「--bg-muted #F0EDE4 底」两种背景：
+     muted 加深到 #44544B（白底 8.0:1 / muted 底 6.9:1），
+     subtle 收到 #5B6C62（5.6:1 / 4.8:1），两者仍保持层级差。旧 subtle #83927F 仅 3.3:1。 */
+  --fg-muted: #44544B;
+  --fg-subtle: #5B6C62;
   --fg-on-accent: #FFFFFF;
 
   --border: #D9D0BA;
@@ -192,6 +202,8 @@
   --accent-soft: rgba(14, 159, 90, 0.12);
   --accent-gradient: linear-gradient(135deg, #0E9F5A 0%, #16A36A 100%);
   --accent-gradient-soft: linear-gradient(135deg, rgba(14,159,90,0.14) 0%, rgba(22,163,106,0.10) 100%);
+  /* 同深色主题的 --accent-text：亮底上必须压得更深（#0A6E3E，accent-soft 底上 5.5:1） */
+  --accent-text: #0A6E3E;
 
   --lime: #5FA30C;
   --lime-hover: #4D870A;

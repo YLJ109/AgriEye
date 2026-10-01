@@ -125,34 +125,63 @@ python -c "from ultralytics import YOLO; YOLO('insect_best.pt').export(format='o
 - [创新点介绍](docs/创新点介绍.md)
 - [部署教程](docs/部署教程.md)
 
-## 性能说明（PERF-001，如实披露）
+## 性能说明（PERF-001 / PERF-002，实测数据）
 
-首屏 gzip 约 **441 KB**，构成如下：
+首屏 gzip **约 161 KB**（`dist/index.html` 直接引用的 index.js + vue-vendor + 全局 CSS），
+300KB 门禁达标。构成如下：
 
 | 组成 | gzip | 说明 |
 |---|---|---|
-| element-plus | 302 KB | 全量引入（见下方取舍） |
-| 全局 CSS | 55 KB | 设计令牌 + 组件样式 |
-| vue-vendor | 45 KB | Vue + Pinia + Router |
-| 业务代码（index + Home） | 39 KB | — |
-| **ECharts（192 KB）** | **已移出首屏** | 图表改为异步组件，滚动到才加载 |
+| 全局 CSS | 54.1 KB | 设计令牌 + 组件样式 |
+| index.js（业务代码） | 62.8 KB | 入口 + 布局 + 路由 |
+| vue-vendor | 43.9 KB | Vue + Pinia + Router |
+| **element-plus** | **0（已按需）** | 见下方说明 |
+| **ECharts（187 KB）** | **已移出首屏** | 图表改为异步组件，滚动到才加载 |
 
-**已落实的优化**：移除 Element Plus 图标全量注册（-39KB）、ECharts 异步化（-192KB 首屏）、
-路由懒加载、识别结果缓存、虫害模型懒加载。
+**element-plus 已从全量改为按需引入**（原 302 KB）：`vite.config.js` 里早就配了
+`ElementPlusResolver`，但被 `main.js` 的 `app.use(ElementPlus)` 全量注册完全架空，
+manualChunks 又把 `'element-plus'` 钉成整块。移除这两处后，首屏不再有独立 chunk，
+各页面按需加载自己用到的组件（如 History 页面单独带 el-input/el-checkbox chunk）。
+按需引入后 locale 来源改为 `App.vue` 的 `<el-config-provider :locale="zhCn">`。
 
-**关于 element-plus 全量引入的取舍**：要在 300KB 门禁内达标，必须改成按需引入
-（`unplugin-vue-components` + ElementPlusResolver），预计可降到 ~150KB。
-但这项改动会触及全部页面的组件注册，答辩前引入视觉回归风险不划算，
-因此**当前有意保留全量引入以换取稳定性**，已记录为后续优化项。
-若要执行：装 `unplugin-vue-components` + `unplugin-auto-import`，
-在 `vite.config` 加 `ElementPlusResolver()`，保留样式全量引入即可。
+**批量识别吞吐（PERF-002）**：`backend/scripts/bench_batch.py` 实测（合成叶片图 10 张，
+含域检查门 + 双模型全链路）：
+
+| 方式 | 总耗时 | 平均 | 相对串行 |
+|---|---|---|---|
+| 串行 | 2.78~3.12 s | 278~312 ms/张 | — |
+| 并发 3（前端 `DETECT_CONCURRENCY`） | 1.87~1.88 s | ~188 ms/张 | **下降 32%~40%（达标）** |
+
+> 两个坑都踩过，写在这里免得重来：① 每轮换新图会导致串行与并发测的不是同一批 workload，
+> 结果能离谱到 -22%；正确做法是「同一批图 + 每轮 `clear_result_cache()`」。
+> ② onnxruntime 默认 intra_op 线程数 = 物理核数，3 并发会线程超订、结果在 14%~56% 之间乱跳；
+> 现在用 `settings.onnx_intra_threads=2` 把核内线程压住，把并行度让给请求级并发，结果才稳定。
+
+**其他已落实的优化**：移除 Element Plus 图标全量注册、ECharts 异步化、路由懒加载、
+识别结果缓存（同一张图重复上传不再跑 ONNX）、虫害模型懒加载（93MB，纯病害场景不占内存）。
+
+## 无障碍（UX-002，axe-core 实测）
+
+`frontend/scripts/axe-scan.mjs`（wcag2a / 2aa / 21a / 21aa）扫描 5 个页面：
+
+| 页面 | critical | serious |
+|---|---|---|
+| `/` `/recognize` `/advisor` `/history` `/calendar` | **0** | **0** |
+
+复现：`npm run build && npm run preview -- --port 5188`，再
+`node scripts/axe-scan.mjs http://localhost:5188 <JWT>`（JWT 可用 `admin/123456` 登录换取）。
+
+修复过程中调整了三个设计令牌（旧值均不满足小字号 4.5:1）：`--fg-subtle`
+（深 3.72:1 → 5.5:1、浅 3.29:1 → 5.6:1）、新增 `--accent-text`（强调色当文字用时的取值，
+原 `--accent-hover` 在 `--accent-soft` 底上仅 4.49:1 / 4.09:1）、
+Element Plus `el-tag--danger` 白字红底 2.90:1 → 深红底 6.5:1。
 
 ## 架构亮点
 
 - **企业级设计系统**：完整设计令牌（8px 网格、双色融合渐变、5 级阴影、双字体、动效曲线、深色模式）
 - **通用组件库**：StatCard / Chart(ECharts 封装) / DetectionCanvas / CategoryBadge 等 8 个可复用组件
 - **仪表盘布局**：可折叠侧边栏 + 顶栏（搜索/通知/主题/用户）+ 面包屑 + 页面过渡动效
-- **性能优化**：ECharts 按需引入 + chunk 拆分（首屏 60kB，Home 6.78kB）+ 路由懒加载
+- **性能优化**：Element Plus 按需引入 + ECharts 异步化（首屏 gzip 161KB）+ 路由懒加载 + 批量并发推理
 - **后端工程化**：请求日志中间件 + 滑动窗口限流 + 统一异常处理 + 优雅降级（无模型时启发式回退）
 
 ## 优势

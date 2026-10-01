@@ -1,7 +1,9 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import ElementPlus from 'element-plus'
-import zhCn from 'element-plus/es/locale/lang/zh-cn'
+// PERF-001：**不要** app.use(ElementPlus) —— 那会把整套组件全量注册，
+// vite.config.js 里配置的 ElementPlusResolver（按需引入）会被完全架空
+// （element-plus chunk 曾达 302KB gzip）。组件由插件按模板实际使用自动导入，
+// 中文语言包改由 App.vue 的 <el-config-provider> 提供。
 import 'element-plus/dist/index.css'
 // PERF-001：不再全量注册 @element-plus/icons-vue（会把整套图标打进首屏包）。
 // 各组件已按需 import 自己用到的图标，此处无需注册。
@@ -44,7 +46,6 @@ app.directive('reveal', {
 const pinia = createPinia()
 app.use(pinia)
 app.use(router)
-app.use(ElementPlus, { locale: zhCn })
 
 // 刷新后先用本地 token 换回身份；token 已失效则清空，由路由守卫送回登录页
 import { useUserStore } from './stores/user'

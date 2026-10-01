@@ -232,8 +232,10 @@ watch(() => route.path, () => { closeMobileSidebar(); closePopovers() })
 .nav-icon-wrap { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; flex-shrink: 0; transition: color 0.2s var(--ease-out); z-index: 1; }
 .nav-body { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; z-index: 1; }
 .nav-label { font-weight: 600; white-space: nowrap; }
-.nav-desc { font-size: 11px; color: var(--fg-subtle); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.nav-item.active .nav-desc { color: color-mix(in srgb, var(--accent) 70%, var(--fg-subtle)); }
+/* UX-002：11px 小字要求 4.5:1。--fg-subtle 实测深色 3.72:1 / 浅色 3.29:1，不达标，
+   改用 --fg-muted（深色 6.6:1 / 浅色 5.4:1）。--fg-subtle 仍留作占位符/禁用态。 */
+.nav-desc { font-size: 11px; color: var(--fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nav-item.active .nav-desc { color: color-mix(in srgb, var(--accent) 70%, var(--fg-muted)); }
 .nav-badge {
   font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-full);
   background: var(--lime); color: #1a2a05; letter-spacing: 0.5px; margin-left: auto; z-index: 1;

@@ -133,17 +133,30 @@ class InferenceEngine:
         self._cache_max = 128
         self._pest_load_failed = False   # 虫害模型加载失败后不再反复重试（PERF-003）
 
+    @staticmethod
+    def _open_session(model_path) -> "object":
+        """创建 onnxruntime session，并限制核内线程数（PERF-002）。
+
+        默认 intra_op 线程数 = 物理核数，批量并发时会线程超订、吞吐反而下降且抖动大。
+        """
+        import onnxruntime as ort
+
+        opts = ort.SessionOptions()
+        opts.intra_op_num_threads = max(1, int(settings.onnx_intra_threads))
+        opts.inter_op_num_threads = max(1, int(settings.onnx_inter_threads))
+        return ort.InferenceSession(
+            str(model_path),
+            sess_options=opts,
+            providers=["CPUExecutionProvider"],
+        )
+
     def load(self) -> None:
         if self._loaded:
             return
         model_path = settings.model_path
         if model_path.exists():
             try:
-                import onnxruntime as ort
-                self._session = ort.InferenceSession(
-                    str(model_path),
-                    providers=["CPUExecutionProvider"],
-                )
+                self._session = self._open_session(model_path)
                 logger.info(f"已加载 ONNX 模型：{model_path.name}")
             except Exception as e:
                 logger.warning(f"ONNX 加载失败，将使用启发式回退：{e}")
@@ -163,11 +176,7 @@ class InferenceEngine:
             self._pest_load_failed = True
             return
         try:
-            import onnxruntime as ort
-            self._pest_session = ort.InferenceSession(
-                str(pest_path),
-                providers=["CPUExecutionProvider"],
-            )
+            self._pest_session = self._open_session(pest_path)
             logger.info(f"已懒加载虫害 ONNX 模型：{pest_path.name}")
         except Exception as e:
             logger.warning(f"虫害模型加载失败（不影响病害识别）：{e}")
@@ -185,6 +194,12 @@ class InferenceEngine:
             self._result_cache.clear()   # 简单清空即可，缓存只用于短期去重
         self._result_cache[key] = result
         return result
+
+    def clear_result_cache(self) -> int:
+        """清空推理结果缓存，返回清掉的条数（基准测试/运维用）。"""
+        n = len(self._result_cache)
+        self._result_cache.clear()
+        return n
 
     def _predict_impl(self, image: np.ndarray) -> DetectionResult:
         """真正的推理逻辑。三段式：病害模型 -> 虫害模型 -> 启发式回退。

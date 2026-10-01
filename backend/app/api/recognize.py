@@ -1,5 +1,6 @@
 """图像识别路由 - 上传图片 -> 推理 -> 生成方案 -> 落库 -> 返回。"""
 import asyncio
+import json
 import time
 from pathlib import Path
 
@@ -40,6 +41,23 @@ def _sniff_image_magic(raw: bytes) -> bool:
     if raw[:4] == b"RIFF" and raw[8:12] == b"WEBP":           # WEBP
         return True
     return False
+
+
+def _parse_json_field(raw: str | None, field: str, expect: type, default):
+    """校验 multipart 里以字符串传递的 JSON 字段（FUNC-003）。
+
+    - 空/未传 -> 用默认值（合法场景：前端确实没有检测框或方案）
+    - 有值但非法 JSON 或类型不符 -> 422，附字段名与原因，便于调用方定位
+    """
+    if raw is None or raw.strip() == "":
+        return default if isinstance(default, expect) else default
+    try:
+        value = json.loads(raw)
+    except (json.JSONDecodeError, TypeError) as e:
+        raise HTTPException(422, f"参数格式错误：{field} 不是合法 JSON（{e}）")
+    if not isinstance(value, expect):
+        raise HTTPException(422, f"参数格式错误：{field} 应为 {expect.__name__}，实际为 {type(value).__name__}")
+    return value
 
 
 def _promote_preview_file(image_path: str | None) -> str | None:
@@ -193,22 +211,10 @@ async def store_diagnosis(
     session: AsyncSession = Depends(get_session),
 ):
     """审核通过后存储诊断记录。"""
-    import json
-    # 前端传来的 JSON 字符串可能为空或格式异常，逐项容错，避免整条记录写不进去（FUNC-003）
-    try:
-        boxes = json.loads(detection_boxes) if detection_boxes else []
-        if not isinstance(boxes, list):
-            boxes = []
-    except (json.JSONDecodeError, TypeError):
-        logger.warning(f"detection_boxes 解析失败，按空列表处理：{detection_boxes!r}")
-        boxes = []
-    try:
-        scheme_obj = json.loads(scheme) if scheme else {}
-        if not isinstance(scheme_obj, dict):
-            scheme_obj = {}
-    except (json.JSONDecodeError, TypeError):
-        logger.warning(f"scheme 解析失败，按空字典处理：{scheme!r}")
-        scheme_obj = {}
+    # FUNC-003：两个 JSON 字段按验收口径严格校验 —— 空值视为「未提供」用默认值，
+    # 有值但解析失败或类型不符直接 422，不再静默吞掉（此前是容错写空，与验收不一致）。
+    boxes = _parse_json_field(detection_boxes, "detection_boxes", list, [])
+    scheme_obj = _parse_json_field(scheme, "scheme", dict, {})
     scheme_obj.setdefault("schema_version", SCHEMA_VERSION)   # DATA-004：结构版本，便于后续兼容升级
 
     # DATA-003：预览阶段的文件还在临时目录，审核通过时搬到正式 uploads，

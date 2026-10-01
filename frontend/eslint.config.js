@@ -13,7 +13,8 @@ export default [
   ...pluginVue.configs['flat/essential'],
 
   {
-    files: ['**/*.{js,vue}'],
+    // .mjs 也要覆盖（scripts/ 下的 Node 脚本），否则会报 process/console 未定义
+    files: ['**/*.{js,mjs,vue}'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',

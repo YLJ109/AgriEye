@@ -113,13 +113,13 @@ onActivated(() => { actCount += 1; if (actCount > 1) { load(); userStore.loadSta
 
     <!-- 筛选栏 -->
     <div class="card filter-bar">
-      <el-select v-model="filterCoarse" placeholder="按大类筛选" @change="load" style="width: 140px">
+      <el-select v-model="filterCoarse" aria-label="按大类筛选" placeholder="按大类筛选" @change="load" style="width: 140px">
         <el-option v-for="o in coarseOptions" :key="o.value" :label="o.label" :value="o.value" />
       </el-select>
-      <el-input v-model="search" placeholder="搜索诊断名称（当前页）…" :prefix-icon="Search" clearable @change="load" style="width: 200px" />
-      <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期"
+      <el-input v-model="search" aria-label="搜索诊断名称" placeholder="搜索诊断名称…" :prefix-icon="Search" clearable @change="load" style="width: 200px" />
+      <el-date-picker v-model="dateRange" aria-label="按日期区间筛选" type="daterange" range-separator="至" start-placeholder="开始日期"
         end-placeholder="结束日期" value-format="YYYY-MM-DD" style="width: 260px" />
-      <el-select v-model="sortBy" style="width: 140px">
+      <el-select v-model="sortBy" aria-label="排序方式" style="width: 140px">
         <el-option v-for="o in sortOptions" :key="o.value" :label="o.label" :value="o.value" />
       </el-select>
       <span class="total">当前页 {{ filteredItems.length }} / 共 {{ store.historyTotal }} 条</span>
@@ -143,7 +143,11 @@ onActivated(() => { actCount += 1; if (actCount > 1) { load(); userStore.loadSta
       </div>
       <div class="grid-list" v-else>
         <div class="hist-card card" v-for="item in filteredItems" :key="item.id" @click="viewDetail(item.id)">
-          <div class="hc-thumb"><img :src="item.image_url" @error="onThumbError" /></div>
+          <!-- UX-002：缩略图必须有 alt，否则读屏与 axe 都判为 critical -->
+          <div class="hc-thumb">
+            <img :src="item.image_url" :alt="`${item.fine_label || item.coarse_label} 现场照片`"
+                 @error="onThumbError" />
+          </div>
           <div class="hc-body">
             <div class="hc-head">
               <h3>{{ item.fine_label || item.coarse_label }}</h3>
@@ -155,9 +159,12 @@ onActivated(() => { actCount += 1; if (actCount > 1) { load(); userStore.loadSta
             </div>
             <span class="hc-time">{{ new Date(item.created_at).toLocaleString('zh-CN') }}</span>
           </div>
+          <!-- UX-002：纯图标圆形按钮必须有可读名称（axe: button-name / critical） -->
           <div class="hc-actions" @click.stop>
-            <el-button :icon="Eye" circle text @click="viewDetail(item.id)" />
-            <el-button :icon="Trash2" circle type="danger" @click="remove(item.id)" />
+            <el-button :icon="Eye" circle text :aria-label="`查看 ${item.fine_label || item.coarse_label} 详情`"
+                       :title="`查看详情`" @click="viewDetail(item.id)" />
+            <el-button :icon="Trash2" circle type="danger" :aria-label="`删除 ${item.fine_label || item.coarse_label} 记录`"
+                       title="删除记录" @click="remove(item.id)" />
           </div>
         </div>
       </div>

@@ -362,6 +362,9 @@ body::after {
 .el-picker__popper { background: var(--el-bg-color-overlay) !important; border: 1px solid var(--border) !important; }
 
 .el-tag { border-radius: var(--radius-sm) !important; font-weight: var(--weight-medium); }
+/* UX-002：Element Plus 的 danger dark 标签是「白字 + #F56C6C 底」，实测只有 2.90:1。
+   换成深红 #B91C1C 后白字对比度 6.5:1，语义色不变。 */
+.el-tag--danger.el-tag--dark { background: #B91C1C !important; border-color: #B91C1C !important; color: #FFFFFF !important; }
 
 .el-drawer { background: var(--bg-elevated) !important; }
 .el-drawer__header { font-family: var(--font-display); font-weight: var(--weight-bold); color: var(--fg) !important; }

@@ -146,7 +146,9 @@ onMounted(() => {
             <div class="conv-item-title">{{ conv.title }}</div>
             <div class="conv-item-time">{{ formatTime(conv.updatedAt) }}</div>
           </div>
-          <button class="conv-item-del" @click.stop="deleteConversation(conv.id)">
+          <!-- UX-002：纯图标按钮补可读名称（axe: button-name / critical） -->
+          <button class="conv-item-del" @click.stop="deleteConversation(conv.id)"
+                  :aria-label="`删除会话 ${conv.title || '未命名会话'}`" title="删除会话">
             <Trash2 :size="14" />
           </button>
         </div>
@@ -202,7 +204,7 @@ onMounted(() => {
         <div class="input-row">
           <el-input v-model="question" placeholder="输入农业问题，或上传图片让 AI 分析..." type="textarea"
             :autosize="{ minRows: 1, maxRows: 4 }" @keydown.enter.exact.prevent="send()" :disabled="loading" />
-          <el-button type="primary" :loading="loading" @click="send()" :disabled="!question.trim() && !imagePreview" class="send-btn">
+          <el-button type="primary" aria-label="发送消息" :loading="loading" @click="send()" :disabled="!question.trim() && !imagePreview" class="send-btn">
             <SendHorizontal v-if="!loading" :size="18" />
           </el-button>
         </div>
