@@ -31,16 +31,17 @@ export const useRecognizeStore = defineStore('recognize', () => {
   }
 
   async function loadHistory(nextPage = page.value, nextPageSize = pageSize.value,
-                             nextCoarse = coarse.value, nextSearch = search.value) {
-    // 搜索/筛选条件变化时必须回到第一页，否则会停在一个超出范围的空页上
+                             nextCoarse = coarse.value, nextSearch = search.value,
+                             sort = 'time') {
+    // 搜索/筛选/排序条件变化时必须回到第一页，否则会停在一个超出范围的空页上
     if (nextSearch !== search.value || nextCoarse !== coarse.value) nextPage = 1
     page.value = nextPage
     pageSize.value = nextPageSize
     coarse.value = nextCoarse
     search.value = nextSearch
-    lastQuery.value = { page: nextPage, pageSize: nextPageSize, coarse: nextCoarse, search: nextSearch }
+    lastQuery.value = { page: nextPage, pageSize: nextPageSize, coarse: nextCoarse, search: nextSearch, sort }
     const res = await api.listHistory({
-      page: nextPage, page_size: nextPageSize, coarse: nextCoarse, search: nextSearch,
+      page: nextPage, page_size: nextPageSize, coarse: nextCoarse, search: nextSearch, sort,
     })
     history.value = res.items
     historyTotal.value = res.total
@@ -49,11 +50,11 @@ export const useRecognizeStore = defineStore('recognize', () => {
 
   async function removeHistory(id) {
     await api.deleteHistory(id)
-    const { page: p, pageSize: ps, coarse: c, search: s } = lastQuery.value
-    await loadHistory(p, ps, c, s)
+    const { page: p, pageSize: ps, coarse: c, search: s, sort } = lastQuery.value
+    await loadHistory(p, ps, c, s, sort || 'time')
     // 删掉当前页最后一条时自动回退一页，避免停在空白页
     if (history.value.length === 0 && p > 1) {
-      await loadHistory(p - 1, ps, c, s)
+      await loadHistory(p - 1, ps, c, s, sort || 'time')
     }
   }
 

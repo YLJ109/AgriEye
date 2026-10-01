@@ -12,12 +12,37 @@ from app.core.middleware import RequestLogMiddleware, RateLimitMiddleware
 from app.core.exceptions import register_exception_handlers
 
 
+def _sweep_preview_tmp() -> None:
+    """DATA-003：启动时清理预览临时目录里的过期文件。
+
+    预览检测（preview=true）每次都会写临时文件，若用户只预览不入库就会残留；
+    这里按 TTL 清理，避免临时目录无限增长。
+    """
+    import time
+    tmp_dir = settings.preview_tmp_dir
+    if not tmp_dir.exists():
+        return
+    ttl = settings.preview_tmp_ttl_hours * 3600
+    now = time.time()
+    removed = 0
+    for p in tmp_dir.iterdir():
+        try:
+            if p.is_file() and (now - p.stat().st_mtime) > ttl:
+                p.unlink()
+                removed += 1
+        except OSError:
+            continue
+    if removed:
+        logger.info(f"清理过期预览文件 {removed} 个（TTL {settings.preview_tmp_ttl_hours}h）")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期：启动时初始化数据库与模型缓存。"""
     logger.info(f"启动 {settings.app_name} ...")
     await init_db()
     logger.info("数据库初始化完成")
+    _sweep_preview_tmp()
     # 预热推理引擎（懒加载在首次调用时也可，这里预热便于演示）
     try:
         from app.core.model_inference import inference_engine
@@ -57,6 +82,8 @@ register_exception_handlers(app)
 
 # 静态资源（上传图片访问）
 app.mount("/uploads", StaticFiles(directory=str(settings.upload_dir)), name="uploads")
+# DATA-003：预览检测的临时图片目录（审核通过后文件会搬进 uploads）
+app.mount("/preview_tmp", StaticFiles(directory=str(settings.preview_tmp_dir)), name="preview_tmp")
 
 # 路由注册
 app.include_router(auth.router)  # /api/auth/*（自带 prefix）

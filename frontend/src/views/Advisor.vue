@@ -43,7 +43,10 @@ function selectConversation(id) { currentId.value = id }
 function saveConversations() { localStorage.setItem('advisor_conversations', JSON.stringify(conversations.value)) }
 
 const question = ref('')
-const loading = ref(false)
+// CONC-003：加载态按会话维护。原来用全局 loading，A 会话还在生成时切到 B 会话，
+// 输入框会被别的会话的加载态锁死，且 B 发送后 A 完成会把 loading 清掉。
+const sendingIds = ref(new Set())
+const loading = computed(() => sendingIds.value.has(currentId.value))
 const chatRef = ref(null)
 const imagePreview = ref('')
 
@@ -74,7 +77,7 @@ async function send() {
     return
   }
   if (!current.value) newConversation()
-  loading.value = true
+  sendingIds.value = new Set(sendingIds.value).add(currentId.value)
   const hasImage = !!imagePreview.value
   const userMsg = { role: 'user', content: text || '请分析这张图片', time: Date.now(), image: imagePreview.value || null }
   current.value.messages.push(userMsg)
@@ -97,7 +100,9 @@ async function send() {
   } catch {
     current.value.messages[pendingIdx] = { role: 'assistant', content: '请求失败，请稍后重试', error: true, time: Date.now() }
   } finally {
-    loading.value = false
+    const next = new Set(sendingIds.value)
+    next.delete(currentId.value)
+    sendingIds.value = next
     current.value.updatedAt = Date.now()
     saveConversations()
     await scrollToBottom()

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onActivated, computed } from 'vue'
+import { ref, onMounted, onActivated, computed, watch } from 'vue'
 import api from '@/api'
 import { useRecognizeStore } from '@/stores/recognize'
 import { useUserStore } from '@/stores/user'
@@ -9,7 +9,7 @@ import ConfidenceRing from '@/components/ConfidenceRing.vue'
 import DetectionCanvas from '@/components/DetectionCanvas.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import Skeleton from '@/components/Skeleton.vue'
-import { Refresh, Delete, View, Search } from '@element-plus/icons-vue'
+import { RefreshCw, Trash2, Eye, Search } from 'lucide-vue-next'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const store = useRecognizeStore()
@@ -62,10 +62,8 @@ const filteredItems = computed(() => {
       return t >= s && t <= e
     })
   }
-  // 排序
-  if (sortBy.value === 'time') list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-  else if (sortBy.value === 'time-asc') list.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
-  else if (sortBy.value === 'confidence') list.sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
+  // FUNC-004：排序已下沉到后端 SQL（listHistory 的 sort 参数）。
+  // 前端只保留日期区间筛选；若仍在这里排序，排的只是当前页的 12 条。
   return list
 })
 
@@ -80,7 +78,11 @@ function onThumbError(e) {
 
 async function load() {
   loading.value = true
-  try { await store.loadHistory(page.value, pageSize.value, filterCoarse.value || null, search.value || null) } finally { loading.value = false }
+  try {
+    // FUNC-004：把排序维度一起交给后端
+    await store.loadHistory(page.value, pageSize.value, filterCoarse.value || null,
+                            search.value || null, sortBy.value || 'time')
+  } finally { loading.value = false }
 }
 async function viewDetail(id) { detail.value = await api.getHistoryDetail(id); detailVisible.value = true }
 async function remove(id) {
@@ -89,6 +91,9 @@ async function remove(id) {
   } catch { return }
   await store.removeHistory(id); ElMessage.success('已删除')
 }
+// FUNC-004：排序/筛选条件变化后必须重新请求后端，否则改了排序但数据没变
+watch([sortBy, filterCoarse], () => load())
+
 onMounted(() => { load(); userStore.loadStats() })
 /* 被 KeepAlive 缓存后，onMounted 只在首次进入时执行一次；
    每次重新进入页面时重新拉取，避免看到过期记录（列表数据需要新鲜，页面筛选/页码状态仍保留） */
@@ -118,7 +123,7 @@ onActivated(() => { actCount += 1; if (actCount > 1) { load(); userStore.loadSta
         <el-option v-for="o in sortOptions" :key="o.value" :label="o.label" :value="o.value" />
       </el-select>
       <span class="total">当前页 {{ filteredItems.length }} / 共 {{ store.historyTotal }} 条</span>
-      <el-button :icon="Refresh" @click="load" :loading="loading">刷新</el-button>
+      <el-button :icon="RefreshCw" @click="load" :loading="loading">刷新</el-button>
     </div>
 
     <!-- 列表 -->
@@ -151,8 +156,8 @@ onActivated(() => { actCount += 1; if (actCount > 1) { load(); userStore.loadSta
             <span class="hc-time">{{ new Date(item.created_at).toLocaleString('zh-CN') }}</span>
           </div>
           <div class="hc-actions" @click.stop>
-            <el-button :icon="View" circle text @click="viewDetail(item.id)" />
-            <el-button :icon="Delete" circle type="danger" @click="remove(item.id)" />
+            <el-button :icon="Eye" circle text @click="viewDetail(item.id)" />
+            <el-button :icon="Trash2" circle type="danger" @click="remove(item.id)" />
           </div>
         </div>
       </div>

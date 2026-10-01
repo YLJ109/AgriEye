@@ -4,7 +4,7 @@ import api from '@/api'
 import SectionHeader from '@/components/SectionHeader.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import Skeleton from '@/components/Skeleton.vue'
-import { Plus, Delete } from '@element-plus/icons-vue'
+import { Plus, Trash2 } from 'lucide-vue-next'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@/components/AppIcon.vue'
 
@@ -155,7 +155,7 @@ onMounted(async () => {
               </div>
               <p v-if="r.content">{{ r.content }}</p>
             </div>
-            <el-button :icon="Delete" circle text type="danger" @click="remove(r)" />
+            <el-button :icon="Trash2" circle text type="danger" @click="remove(r)" />
           </div>
         </div>
       </section>

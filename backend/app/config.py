@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     # ---------- 路径 ----------
     base_dir: Path = Path(__file__).resolve().parents[1]
     upload_dir: Path = base_dir / "uploads"
+    # DATA-003：预览检测（preview=true）的临时落盘目录，不入正式 uploads，
+    # 审核通过时才搬到 upload_dir；启动时清理超过 24 小时的残留。
+    preview_tmp_dir: Path = base_dir / "data" / "preview_tmp"
+    preview_tmp_ttl_hours: int = 24
     db_path: Path = base_dir / "data" / "agri.db"
     knowledge_dir: Path = base_dir / "knowledge"
     vector_db_path: Path = base_dir / "data" / "vector_db"
@@ -36,7 +40,10 @@ class Settings(BaseSettings):
         "phytotoxicity": "农药药害",
         "unknown": "未识别",
     }
-    # 细分 20 类（水稻/小麦/果蔬常见灾害）
+    # 细分类别（水稻/小麦/果蔬常见灾害）。
+    # ASSET-005：这里的数量随新增类别变化（当前 24 类），不要写死数字，
+    # 需要展示数量时用 len(settings.fine_classes) 或 /api/system/info 的 fine_classes_count。
+    # general_pest 为「无对应细分模型的其他农业害虫」兜底类。
     fine_classes: list[str] = [
         "rice_blast", "rice_bacterial_blight", "rice_sheath_blight", "rice_brown_planthopper",
         "wheat_rust", "wheat_powdery_mildew", "wheat_aphid", "wheat_scab",
@@ -77,7 +84,7 @@ class Settings(BaseSettings):
 
     def ensure_dirs(self) -> None:
         for d in (self.upload_dir, self.db_path.parent, self.vector_db_path,
-                  self.model_path.parent, self.knowledge_dir):
+                  self.model_path.parent, self.knowledge_dir, self.preview_tmp_dir):
             d.mkdir(parents=True, exist_ok=True)
 
 

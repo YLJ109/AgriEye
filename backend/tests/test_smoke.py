@@ -4,6 +4,7 @@
 FUNC-001（搜索下沉后端）、SEC-009（异常不回显）。
 """
 import io
+import uuid
 
 import httpx
 import pytest
@@ -158,6 +159,44 @@ def test_history_search_param_accepted(api_ready, admin_token):
     )
     assert r.status_code == 200
     assert "items" in r.json()
+
+
+# ---------- FUNC-004：排序下沉到后端 ----------
+def test_sort_param_changes_order(api_ready, admin_token):
+    def ids(sort):
+        r = httpx.get(
+            f"{api_ready}/api/history/list",
+            params={"page": 1, "page_size": 20, "sort": sort},
+            headers={"Authorization": f"Bearer {admin_token}"},
+            timeout=10,
+        ).json()
+        return [i["id"] for i in r["items"]]
+
+    desc_ids, asc_ids = ids("time"), ids("time-asc")
+    if len(desc_ids) < 2:
+        pytest.skip("样本不足，无法验证排序")
+    assert desc_ids == list(reversed(asc_ids)), "时间正序与倒序应互为逆序"
+    # 未知排序值不应报错，回退到默认
+    assert ids("not-a-sort") == desc_ids
+
+
+# ---------- DATA-003：预览检测不污染 uploads ----------
+def test_preview_does_not_write_uploads(api_ready, admin_token):
+    """连续预览检测后，正式 uploads 目录的文件数不应增长。"""
+    from app.config import settings
+    before = len([p for p in settings.upload_dir.iterdir() if p.is_file()])
+    for _ in range(3):
+        files = {"file": (f"prev_{uuid.uuid4().hex[:8]}.png", io.BytesIO(_png_bytes()), "image/png")}
+        r = httpx.post(
+            f"{api_ready}/api/recognize",
+            files=files,
+            data={"preview": "true"},
+            headers={"Authorization": f"Bearer {admin_token}"},
+            timeout=30,
+        )
+        assert r.status_code == 200
+    after = len([p for p in settings.upload_dir.iterdir() if p.is_file()])
+    assert after == before, f"预览检测不应写 uploads（{before} -> {after}）"
 
 
 # ---------- SEC-009：异常响应不回显内部细节 ----------

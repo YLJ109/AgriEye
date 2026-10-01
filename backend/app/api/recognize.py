@@ -42,6 +42,30 @@ def _sniff_image_magic(raw: bytes) -> bool:
     return False
 
 
+def _promote_preview_file(image_path: str | None) -> str | None:
+    """把预览临时目录里的文件搬进正式 uploads（DATA-003）。
+
+    前端可能传 /preview_tmp/xxx.jpg 也可能直接传 xxx.jpg，两种都兼容；
+    目标文件已存在时视为同一张图（内容哈希命名），直接复用不重复搬运。
+    """
+    if not image_path:
+        return image_path
+    name = image_path.replace("/preview_tmp/", "").replace("/uploads/", "").lstrip("/")
+    if not name:
+        return image_path
+    src = settings.preview_tmp_dir / name
+    dst = settings.upload_dir / name
+    if src.exists() and not dst.exists():
+        try:
+            import shutil
+            shutil.move(str(src), str(dst))
+            logger.info(f"预览文件已转入正式目录：{name}")
+        except OSError as e:
+            logger.warning(f"预览文件搬移失败，沿用原路径：{name} - {e}")
+            return name
+    return name
+
+
 @router.post("", response_model=RecognizeResponse)
 async def recognize(
     current_user: CurrentUser,
@@ -67,9 +91,17 @@ async def recognize(
 
     # ---------- 保存 ----------
     safe_name = Path(original_name).name.replace("/", "_").replace("\\", "_")
-    save_name = f"{inference_engine.image_hash(np.frombuffer(raw[:64], dtype=np.uint8))}_{safe_name}"
-    save_path = settings.upload_dir / save_name
-    save_path.write_bytes(raw)
+    save_name = f"{inference_engine.image_hash(raw)}_{safe_name}"
+    # DATA-003：预览检测写临时目录，不再污染正式 uploads（连续预览不会产生文件堆积）；
+    # 审核通过时由 /store 搬到 upload_dir。
+    target_dir = settings.preview_tmp_dir if preview else settings.upload_dir
+    save_path = target_dir / save_name
+    try:
+        save_path.write_bytes(raw)
+    except OSError as e:
+        logger.error(f"保存上传文件失败：{save_path} - {e}")
+        raise HTTPException(500, "图片保存失败")
+    image_url_prefix = "/preview_tmp" if preview else "/uploads"
 
     # ---------- 推理 ----------
     img_array = np.frombuffer(raw, dtype=np.uint8)
@@ -141,7 +173,7 @@ async def recognize(
         detection_boxes=result.boxes,
         scheme=scheme,
         rag_advice=scheme.get("rag_advice"),
-        image_url=f"/uploads/{save_name}",
+        image_url=f"{image_url_prefix}/{save_name}",
         created_at=created_at,
         mode=result.mode,
     )
@@ -178,6 +210,10 @@ async def store_diagnosis(
         logger.warning(f"scheme 解析失败，按空字典处理：{scheme!r}")
         scheme_obj = {}
     scheme_obj.setdefault("schema_version", SCHEMA_VERSION)   # DATA-004：结构版本，便于后续兼容升级
+
+    # DATA-003：预览阶段的文件还在临时目录，审核通过时搬到正式 uploads，
+    # 并把 image_path 改写为最终落点，保证 /uploads/{path} 可被访问。
+    image_path = _promote_preview_file(image_path)
 
     # CONC-001：同一用户对同一张图重复提交（网络重试/误点）不再产生重复记录
     if image_path:

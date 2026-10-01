@@ -1,7 +1,7 @@
 """历史诊断记录与地块档案路由。"""
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, desc, or_
+from sqlalchemy import select, func, asc, desc, or_
 from loguru import logger
 
 from app.config import settings
@@ -21,6 +21,7 @@ async def list_history(
     page_size: int = Query(10, ge=1, le=50),
     coarse: str | None = Query(None, description="按大类筛选"),
     search: str | None = Query(None, description="关键词：匹配病害中文名/作物/大类（FUNC-001 下沉后端）"),
+    sort: str = Query("time", description="排序：time(时间倒序) / time-asc(时间正序) / confidence(置信度)"),
     session: AsyncSession = Depends(get_session),
 ):
     base = select(Diagnosis).where(Diagnosis.user_id == current_user.id)
@@ -41,8 +42,15 @@ async def list_history(
     total_q = select(func.count()).select_from(base.subquery())
     total = (await session.execute(total_q)).scalar_one()
 
+    # FUNC-004：排序下沉到 SQL。原实现只对当前页的 12 条排序，
+    # 结果「按置信度排序」排的其实是这一页，不是全量。
+    order_by = {
+        "time": desc(Diagnosis.created_at),
+        "time-asc": asc(Diagnosis.created_at),
+        "confidence": desc(Diagnosis.confidence),
+    }.get(sort, desc(Diagnosis.created_at))
     rows = (await session.execute(
-        base.order_by(desc(Diagnosis.created_at))
+        base.order_by(order_by)
         .offset((page - 1) * page_size).limit(page_size)
     )).scalars().all()
 

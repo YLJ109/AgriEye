@@ -477,3 +477,11 @@ body::after {
   }
   .reveal { opacity: 1 !important; transform: none !important; }
 }
+
+/* ============================================================
+ * ARCH-002：图标库统一到 lucide
+ * el-icon 用 font-size 控制尺寸，而 lucide 默认渲染成 24x24 的 width/height，
+ * 直接放进 <el-icon> 会把按钮撑大（历史上出过这个 bug）。
+ * 这条规则让 el-icon 内的 svg 一律跟随字号，两套图标视觉尺寸才能一致。
+ * ============================================================ */
+.el-icon > svg { width: 1em; height: 1em; }

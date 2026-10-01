@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onErrorCaptured } from 'vue'
-import { Refresh } from '@element-plus/icons-vue'
+import { RefreshCw } from 'lucide-vue-next'
 import AppIcon from '@/components/AppIcon.vue'
 
 const error = ref(null)
@@ -23,7 +23,7 @@ function retry() {
       </div>
       <h2 class="error-title">页面渲染出错</h2>
       <p class="error-desc">{{ error.message || '组件加载失败，请重试' }}</p>
-      <el-button type="primary" :icon="Refresh" @click="retry">重试</el-button>
+      <el-button type="primary" :icon="RefreshCw" @click="retry">重试</el-button>
     </div>
   </div>
   <slot v-else />

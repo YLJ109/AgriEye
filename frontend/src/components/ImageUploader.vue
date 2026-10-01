@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onBeforeUnmount } from 'vue'
-import { UploadFilled, Camera, Picture } from '@element-plus/icons-vue'
+import { Upload, Camera, Image as ImageIcon } from 'lucide-vue-next'
 import { ElMessage } from 'element-plus'
 import AppIcon from '@/components/AppIcon.vue'
 
@@ -52,12 +52,12 @@ onBeforeUnmount(revokePreview)
       class="dropzone" :class="{ dragover }"
       @dragover.prevent="dragOver = true" @dragleave="dragOver = false" @drop.prevent="onDrop"
       @click="inputRef?.click()">
-      <div class="dz-icon"><el-icon><UploadFilled /></el-icon></div>
+      <div class="dz-icon"><el-icon><Upload /></el-icon></div>
       <h3 class="dz-title">拖拽图片到此处，或点击上传</h3>
       <p class="dz-hint">拍摄作物叶片 · 支持 JPG / PNG / WEBP · 最大 10MB</p>
       <div class="dz-actions">
         <el-button type="primary" @click.stop="inputRef?.click()"><el-icon><Camera /></el-icon>&nbsp;拍照识别</el-button>
-        <el-button @click.stop="inputRef?.click()"><el-icon><Picture /></el-icon>&nbsp;选择文件</el-button>
+        <el-button @click.stop="inputRef?.click()"><el-icon><ImageIcon /></el-icon>&nbsp;选择文件</el-button>
       </div>
       <div class="dz-tips">
         <AppIcon name="bulb" :size="14" />

@@ -131,6 +131,7 @@ class InferenceEngine:
         # 分页来回切换）不必再跑一遍 CPU 上的 ONNX，命中就直接返回。
         self._result_cache: dict[str, DetectionResult] = {}
         self._cache_max = 128
+        self._pest_load_failed = False   # 虫害模型加载失败后不再反复重试（PERF-003）
 
     def load(self) -> None:
         if self._loaded:
@@ -148,20 +149,29 @@ class InferenceEngine:
                 logger.warning(f"ONNX 加载失败，将使用启发式回退：{e}")
         else:
             logger.warning(f"模型文件不存在：{model_path}，使用启发式回退识别")
-        pest_path = settings.pest_model_path
-        if pest_path.exists():
-            try:
-                import onnxruntime as ort
-                self._pest_session = ort.InferenceSession(
-                    str(pest_path),
-                    providers=["CPUExecutionProvider"],
-                )
-                logger.info(f"已加载虫害 ONNX 模型：{pest_path.name}")
-            except Exception as e:
-                logger.warning(f"虫害模型加载失败（不影响病害识别）：{e}")
-        else:
-            logger.warning(f"虫害模型文件不存在：{pest_path}，虫害识别走启发式")
+        # PERF-003：虫害模型 93MB，不在启动时预热，改为首次真正需要时懒加载，
+        # 冷启动更快、常驻内存更低（纯病害场景下完全不占这份内存）。
         self._loaded = True
+
+    def _ensure_pest_session(self) -> None:
+        """懒加载虫害模型（PERF-003）。只尝试一次，失败后不再反复重试。"""
+        if self._pest_session is not None or self._pest_load_failed:
+            return
+        pest_path = settings.pest_model_path
+        if not pest_path.exists():
+            logger.info(f"虫害模型文件不存在：{pest_path}，虫害识别走启发式")
+            self._pest_load_failed = True
+            return
+        try:
+            import onnxruntime as ort
+            self._pest_session = ort.InferenceSession(
+                str(pest_path),
+                providers=["CPUExecutionProvider"],
+            )
+            logger.info(f"已懒加载虫害 ONNX 模型：{pest_path.name}")
+        except Exception as e:
+            logger.warning(f"虫害模型加载失败（不影响病害识别）：{e}")
+            self._pest_load_failed = True
 
     def predict(self, image: np.ndarray) -> DetectionResult:
         """对单张图像推理（带结果缓存，见 PERF-002）。"""
@@ -198,6 +208,7 @@ class InferenceEngine:
                 logger.info("病害模型未检出可信目标，尝试虫害模型")
             except Exception as e:
                 logger.warning(f"病害 ONNX 推理失败，尝试虫害模型：{e}")
+        self._ensure_pest_session()   # PERF-003：首次走到这里才加载 93MB 的虫害模型
         if self._pest_session is not None:
             try:
                 result = self._predict_pest(image)

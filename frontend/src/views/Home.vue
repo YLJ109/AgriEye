@@ -8,8 +8,7 @@ import SectionHeader from '@/components/SectionHeader.vue'
 import Chart from '@/components/Chart.vue'
 import Skeleton from '@/components/Skeleton.vue'
 import AppIcon from '@/components/AppIcon.vue'
-import { Camera, ChatLineRound, Document, Calendar, ArrowRight } from '@element-plus/icons-vue'
-import { Cpu, Wifi, ShieldCheck, Database } from 'lucide-vue-next'
+import { Camera, MessagesSquare, FileText, Calendar, ArrowRight, Cpu, Wifi, ShieldCheck, Database } from 'lucide-vue-next'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -119,9 +118,9 @@ const innovations = [
 ]
 const quickActions = [
   { icon: Camera, label: '拍照识别', desc: '上传叶片智能诊断', path: '/recognize', accent: 'accent' },
-  { icon: ChatLineRound, label: 'AI 顾问', desc: '农事问答与方案', path: '/advisor', accent: 'tech' },
+  { icon: MessagesSquare, label: 'AI 顾问', desc: '农事问答与方案', path: '/advisor', accent: 'tech' },
   { icon: Calendar, label: '农事日历', desc: '节气种植建议', path: '/calendar', accent: 'lime' },
-  { icon: Document, label: '诊断档案', desc: '历史记录追溯', path: '/history', accent: 'accent' },
+  { icon: FileText, label: '诊断档案', desc: '历史记录追溯', path: '/history', accent: 'accent' },
 ]
 
 const systemStatus = [
@@ -151,7 +150,7 @@ const sparks = {
             <el-icon><Camera /></el-icon>&nbsp;立即识别
           </el-button>
           <el-button size="large" @click="router.push('/advisor')">
-            <el-icon><ChatLineRound /></el-icon>&nbsp;AI 顾问
+            <el-icon><MessagesSquare /></el-icon>&nbsp;AI 顾问
           </el-button>
         </div>
         <div class="hero-stats-inline">

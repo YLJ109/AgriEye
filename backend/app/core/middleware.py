@@ -34,19 +34,35 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.limit = limit
         self.window = window
         self._hits: dict[str, deque] = defaultdict(deque)
+        self._last_sweep = time.time()
+
+    @staticmethod
+    def _client_ip(request: Request) -> str:
+        """CONC-002：反向代理后面 request.client.host 全是代理 IP，会误伤全部用户。
+
+        信任链：X-Forwarded-For 最左段（真实客户端）。注意只有在确实部署了会重写
+        该头的反向代理时才应信任它，直连部署下没有这个头，自动回退到直连 IP。
+        """
+        xff = request.headers.get("x-forwarded-for")
+        if xff:
+            return xff.split(",")[0].strip()
+        return request.client.host if request.client else "unknown"
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
         # 仅对写接口限流
         if request.method in ("POST", "PUT", "DELETE") and path.startswith("/api"):
-            client = request.client.host if request.client else "unknown"
+            client = self._client_ip(request)
             now = time.time()
             q = self._hits[client]
             while q and q[0] < now - self.window:
                 q.popleft()
-            # 清理过期或空闲 IP 条目，避免长期运行内存泄漏
-            if len(self._hits) > 1000:
-                stale = [ip for ip, dq in self._hits.items() if not dq or dq[-1] < now - self.window]
+            # CONC-002：惰性 TTL 清理。原实现只在条目数 >1000 时才清，
+            # 长期运行下 idle IP 的键会一直留在内存里；改为每个窗口扫一次。
+            if now - self._last_sweep > self.window:
+                self._last_sweep = now
+                stale = [ip for ip, dq in self._hits.items()
+                         if not dq or dq[-1] < now - self.window]
                 for ip in stale:
                     del self._hits[ip]
             if len(q) >= self.limit:
