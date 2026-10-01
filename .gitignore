@@ -2,6 +2,8 @@
 node_modules/
 dist/
 frontend/dist/
+# Vite 配置重载时生成的临时文件（vite.config.js.timestamp-*.mjs）
+vite.config.js.timestamp-*
 .venv/
 venv/
 *.pyc
