@@ -33,8 +33,9 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr :8001 ^| findstr LISTENING') 
   echo 端口 8001 已被进程 %%a 占用，尝试终止...
   taskkill /F /PID %%a >nul 2>&1
 )
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr :5173 ^| findstr LISTENING') do (
-  echo 端口 5173 已被进程 %%a 占用，尝试终止...
+rem 注意：本项目前端固定 5188。绝不要强杀 5173 —— 那是另一个项目（校园反霸凌）的端口。
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr :5188 ^| findstr LISTENING') do (
+  echo 端口 5188 已被进程 %%a 占用，尝试终止...
   taskkill /F /PID %%a >nul 2>&1
 )
 
@@ -43,17 +44,17 @@ echo [3/4] 启动后端（FastAPI :8001）...
 start "后端-智农慧眼" cmd /k "cd /d "%BACKEND_DIR%" && python -m uvicorn app.main:app --host 0.0.0.0 --port 8001"
 
 rem --- 启动前端 ---
-echo [4/4] 启动前端（Vite :5173）...
-start "前端-智农慧眼" cmd /k "cd /d "%FRONTEND_DIR%" && npm run dev"
+echo [4/4] 启动前端（Vite :5188）...
+start "前端-智农慧眼" cmd /k "cd /d "%FRONTEND_DIR%" && npm run dev -- --port 5188 --strictPort"
 
 echo.
 echo ========================================
 echo   启动完成！
-echo   前端: http://localhost:5173
+echo   前端: http://localhost:5188
 echo   后端: http://localhost:8001
 echo   API文档: http://localhost:8001/docs
 echo ========================================
 echo.
 echo 按任意键打开浏览器...
 pause >nul
-start http://localhost:5173
+start http://localhost:5188
