@@ -1,0 +1,20 @@
+# ===== 算法模块依赖（与后端共享 torch/ultralytics）=====
+ultralytics==8.3.0
+torch==2.4.1
+torchvision==0.19.1
+opencv-python-headless==4.10.0.84
+numpy==1.26.4
+Pillow==10.4.0
+PyYAML==6.0.2
+loguru==0.7.2
+
+# ===== 模型压缩量化 =====
+onnx==1.16.1
+onnxruntime==1.19.2
+
+# ===== SAM 小样本分割（可选，未安装自动回退超像素）=====
+# segment-anything @ git+https://github.com/facebookresearch/segment-anything.git
+
+# ===== 评估 =====
+matplotlib==3.9.2
+pandas==2.2.3

@@ -1,0 +1,236 @@
+/* ============================================================
+ * 农智 AI 顾问 · 设计系统 v2「智感绿洲 / Neo-Organic AgriTech」
+ * 方向：暗色为主 · 深林近黑底 · 流光绿主色 · 电光青柠唯一强调色
+ * 8px 网格 · 双字体配对 · 5 级环境色阴影 · 语义色完整 · 暗/亮双模
+ * 主色 60% / 辅助 30% / 强调 10%
+ * ============================================================ */
+
+:root {
+  /* ---------- 8px 网格间距 ---------- */
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 40px;
+  --space-8: 48px;
+  --space-9: 64px;
+  --space-10: 80px;
+
+  /* ---------- 色板：深林近黑 + 暖中性 ---------- */
+  --bg: #07120D;
+  --bg-elevated: #0E1B14;
+  --bg-muted: #15241B;
+  --bg-hover: #1C2E23;
+  --bg-invert: #E8F2EA;
+
+  --fg: #E8F2EA;
+  --fg-secondary: #C2D2C6;
+  --fg-muted: #8FA399;
+  --fg-subtle: #61786C;
+  --fg-on-accent: #04140C;
+
+  --border: #1E3326;
+  --border-strong: #2C4536;
+  --ring: #34D399;
+
+  /* 主强调：流光绿（品牌主色） */
+  --accent: #1FB96B;
+  --accent-hover: #18A35C;
+  --accent-secondary: #34D399;
+  --accent-soft: rgba(31, 185, 107, 0.12);
+  --accent-gradient: linear-gradient(135deg, #1FB96B 0%, #34D399 100%);
+  --accent-gradient-soft: linear-gradient(135deg, rgba(31,185,107,0.16) 0%, rgba(52,211,153,0.12) 100%);
+
+  /* 锐利强调：电光青柠（唯一强调色，只给关键 AI 动作） */
+  --lime: #BEF264;
+  --lime-hover: #D9F99D;
+  --lime-soft: rgba(190, 242, 100, 0.14);
+  --lime-gradient: linear-gradient(135deg, #BEF264 0%, #86EFAC 100%);
+
+  /* 科技蓝（AI 维度，低饱和，仅作辅助） */
+  --tech: #38BDF8;
+  --tech-secondary: #7DD3FC;
+  --tech-soft: rgba(56, 189, 248, 0.14);
+  --tech-gradient: linear-gradient(135deg, #38BDF8 0%, #7DD3FC 100%);
+
+  /* 双色融合渐变（农业 × AI） */
+  --fusion-gradient: linear-gradient(135deg, #1FB96B 0%, #38BDF8 100%);
+  --fusion-gradient-soft: linear-gradient(135deg, rgba(31,185,107,0.16) 0%, rgba(56,189,248,0.12) 100%);
+
+  /* 四大类语义色（提纯，适配暗底） */
+  --cat-fungal: #FB923C;
+  --cat-fungal-soft: rgba(251, 146, 60, 0.16);
+  --cat-pest: #F87171;
+  --cat-pest-soft: rgba(248, 113, 113, 0.16);
+  --cat-deficiency: #FBBF24;
+  --cat-deficiency-soft: rgba(251, 191, 36, 0.16);
+  --cat-phytotoxicity: #C084FC;
+  --cat-phytotoxicity-soft: rgba(192, 132, 252, 0.16);
+
+  /* 功能色 */
+  --success: #34D399;
+  --warning: #FBBF24;
+  --danger: #F87171;
+  --info: #38BDF8;
+
+  /* ---------- 圆角 ---------- */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-2xl: 36px;
+  --radius-full: 9999px;
+
+  /* ---------- 5 级环境色阴影（带绿调环境光） ---------- */
+  --shadow-xs: 0 1px 2px rgba(3, 12, 8, 0.4);
+  --shadow-sm: 0 2px 8px rgba(3, 12, 8, 0.5);
+  --shadow-md: 0 8px 20px rgba(3, 12, 8, 0.55);
+  --shadow-lg: 0 16px 36px rgba(3, 12, 8, 0.6);
+  --shadow-xl: 0 28px 60px rgba(3, 12, 8, 0.66);
+  --shadow-2xl: 0 36px 80px rgba(3, 12, 8, 0.72);
+  --shadow-accent: 0 10px 30px rgba(31, 185, 107, 0.30);
+  --shadow-accent-lg: 0 14px 40px rgba(31, 185, 107, 0.42);
+  --shadow-lime: 0 10px 30px rgba(190, 242, 100, 0.28);
+  --shadow-tech: 0 10px 30px rgba(56, 189, 248, 0.28);
+
+  /* ---------- 字体 ---------- */
+  --font-display: "Clash Display", "Smiley Sans Oblique", "Noto Sans SC", "PingFang SC", sans-serif;
+  --font-ui: "Manrope", "Noto Sans SC", "PingFang SC", "Microsoft YaHei UI", sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", monospace;
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 15px;
+  --text-lg: 17px;
+  --text-xl: 20px;
+  --text-2xl: 26px;
+  --text-3xl: 34px;
+  --text-4xl: 46px;
+  --text-5xl: 64px;
+
+  --leading-tight: 1.15;
+  --leading-normal: 1.55;
+  --leading-relaxed: 1.75;
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-extrabold: 800;
+
+  /* ---------- 动效 ---------- */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 160ms;
+  --duration: 240ms;
+  --duration-slow: 400ms;
+  --transition: all var(--duration) var(--ease-out);
+
+  /* ---------- 布局 ---------- */
+  --sidebar-width: 264px;
+  --sidebar-collapsed: 76px;
+  --topbar-height: 64px;
+  --content-max: 1440px;
+  --content-padding: 24px;
+  --gap-box: 16px;
+  --gap-section: 24px;
+
+  /* ---------- 按钮系统 ---------- */
+  --btn-height-sm: 34px;
+  --btn-height-md: 40px;
+  --btn-height-lg: 46px;
+  --btn-padding-sm: 14px;
+  --btn-padding-md: 18px;
+  --btn-padding-lg: 24px;
+  --btn-font-sm: 13px;
+  --btn-font-md: 14px;
+  --btn-font-lg: 15px;
+  --btn-radius: var(--radius-md);
+  --btn-gap: 8px;
+
+  /* ---------- 玻璃 / 质感 ---------- */
+  --glass-bg: color-mix(in srgb, var(--bg-elevated) 68%, transparent);
+  --glass-border: color-mix(in srgb, var(--border) 55%, transparent);
+  --grain-opacity: 0.05;
+  --mesh-opacity: 1;
+
+  /* ---------- z-index ---------- */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 1000;
+  --z-modal: 1100;
+  --z-toast: 1200;
+}
+
+/* ============ 亮色模式：骨白 / Bone ============ */
+[data-theme="light"] {
+  --bg: #FAF8F2;
+  --bg-elevated: #FFFFFF;
+  --bg-muted: #F0EDE4;
+  --bg-hover: #E1DACA;
+  --bg-invert: #0E1B14;
+
+  --fg: #14221A;
+  --fg-secondary: #37463D;
+  --fg-muted: #5C6E62;
+  --fg-subtle: #83927F;
+  --fg-on-accent: #FFFFFF;
+
+  --border: #D9D0BA;
+  --border-strong: #C6BA9C;
+  --ring: #0E9F5A;
+
+  --accent: #0E9F5A;
+  --accent-hover: #0B8549;
+  --accent-secondary: #16A36A;
+  --accent-soft: rgba(14, 159, 90, 0.12);
+  --accent-gradient: linear-gradient(135deg, #0E9F5A 0%, #16A36A 100%);
+  --accent-gradient-soft: linear-gradient(135deg, rgba(14,159,90,0.14) 0%, rgba(22,163,106,0.10) 100%);
+
+  --lime: #5FA30C;
+  --lime-hover: #4D870A;
+  --lime-soft: rgba(95, 163, 12, 0.14);
+  --lime-gradient: linear-gradient(135deg, #65A30D 0%, #84CC16 100%);
+
+  --tech: #0E7490;
+  --tech-secondary: #0891B2;
+  --tech-soft: rgba(14, 116, 144, 0.12);
+  --tech-gradient: linear-gradient(135deg, #0E7490 0%, #0891B2 100%);
+
+  --fusion-gradient: linear-gradient(135deg, #0E9F5A 0%, #0E7490 100%);
+  --fusion-gradient-soft: linear-gradient(135deg, rgba(14,159,90,0.14) 0%, rgba(14,116,144,0.10) 100%);
+
+  --cat-fungal: #EA580C;
+  --cat-fungal-soft: rgba(234, 88, 12, 0.12);
+  --cat-pest: #DC2626;
+  --cat-pest-soft: rgba(220, 38, 38, 0.10);
+  --cat-deficiency: #CA8A04;
+  --cat-deficiency-soft: rgba(202, 138, 4, 0.12);
+  --cat-phytotoxicity: #7C3AED;
+  --cat-phytotoxicity-soft: rgba(124, 58, 237, 0.12);
+
+  --success: #0E9F5A;
+  --warning: #CA8A04;
+  --danger: #DC2626;
+  --info: #0E7490;
+
+  --shadow-xs: 0 1px 2px rgba(20, 34, 26, 0.06);
+  --shadow-sm: 0 2px 8px rgba(20, 34, 26, 0.08);
+  --shadow-md: 0 8px 20px rgba(20, 34, 26, 0.10);
+  --shadow-lg: 0 16px 36px rgba(20, 34, 26, 0.12);
+  --shadow-xl: 0 28px 60px rgba(20, 34, 26, 0.14);
+  --shadow-2xl: 0 36px 80px rgba(20, 34, 26, 0.18);
+  --shadow-accent: 0 10px 30px rgba(14, 159, 90, 0.22);
+  --shadow-accent-lg: 0 14px 40px rgba(14, 159, 90, 0.30);
+  --shadow-lime: 0 10px 30px rgba(95, 163, 12, 0.20);
+  --shadow-tech: 0 10px 30px rgba(14, 116, 144, 0.20);
+
+  --grain-opacity: 0.025;
+  --mesh-opacity: 0.35;
+}

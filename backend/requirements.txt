@@ -1,0 +1,29 @@
+# ===== 后端核心 =====
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-multipart==0.0.9
+pydantic==2.9.2
+pydantic-settings==2.5.2
+
+# ===== 数据库 =====
+sqlalchemy==2.0.35
+aiosqlite==0.20.0
+
+# ===== 图像与算法（CPU 推理）=====
+torch==2.4.1
+torchvision==0.19.1
+ultralytics==8.3.0
+opencv-python-headless==4.10.0.84
+Pillow==10.4.0
+numpy==1.26.4
+onnxruntime==1.19.2
+
+# ===== RAG 向量知识库 =====
+faiss-cpu==1.8.0.post1
+sentence-transformers==3.1.1
+jieba==0.42.1
+
+# ===== 工具 =====
+loguru==0.7.2
+python-dotenv==1.0.1
+orjson==3.10.7

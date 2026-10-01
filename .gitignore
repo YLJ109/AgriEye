@@ -1,0 +1,41 @@
+# ===== 依赖与构建产物 =====
+node_modules/
+dist/
+frontend/dist/
+.venv/
+venv/
+*.pyc
+__pycache__/
+*.egg-info/
+
+# ===== 模型权重（226MB，GitHub 单文件上限 100MB，不放仓库；见 README「获取模型」）=====
+backend/data/models/*.onnx
+backend/data/models/*.pt
+backend/data/models/*.pth
+
+# ===== 运行时数据 =====
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/data/*.db
+backend/data/*.db.bak
+backend/data/*.sqlite
+backend/data/*.sqlite3
+backend/data/vector_db/
+backend/data/agri.db-journal
+*.bak
+
+# ===== 环境变量（含密钥）=====
+.env
+.env.local
+
+# ===== 编辑器 / IDE / 工具目录 =====
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+.arts/
+.codeartsdoer/
+.workbuddy/
+
+# ===== 日志 =====
+*.log

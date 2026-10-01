@@ -1,0 +1,32 @@
+# 农作物四分类细分类别（20+ 类）
+# 四大类：fungal_disease 真菌病害 / pest 虫害 / deficiency 缺肥 / phytotoxicity 药害
+names:
+  0: rice_blast                # 稻瘟病
+  1: rice_bacterial_blight     # 水稻白叶枯病
+  2: rice_sheath_blight        # 水稻纹枯病
+  3: rice_brown_planthopper    # 褐飞虱
+  4: wheat_rust                # 小麦锈病
+  5: wheat_powdery_mildew      # 小麦白粉病
+  6: wheat_aphid               # 麦蚜
+  7: wheat_scab                # 小麦赤霉病
+  8: corn_leaf_blight          # 玉米大斑病
+  9: corn_borer                # 玉米螟
+  10: cucumber_powdery_mildew  # 黄瓜白粉病
+  11: cucumber_downy_mildew    # 黄瓜霜霉病
+  12: tomato_early_blight      # 番茄早疫病
+  13: tomato_late_blight       # 番茄晚疫病
+  14: tomato_leaf_miner        # 番茄潜叶蝇
+  15: apple_scab               # 苹果黑星病
+  16: apple_aphid              # 苹果蚜虫
+  17: citrus_canker            # 柑橘溃疡病
+  18: citrus_red_mite          # 柑橘红蜘蛛
+  19: general_nitrogen_deficiency    # 缺氮
+  20: general_potassium_deficiency   # 缺钾
+  21: general_phosphorus_deficiency  # 缺磷
+  22: general_pesticide_injury       # 农药药害
+
+coarse_map:
+  fungal_disease: [0,1,2,4,5,7,8,10,11,12,13,15,17]
+  pest: [3,6,9,14,16,18]
+  deficiency: [19,20,21]
+  phytotoxicity: [22]
